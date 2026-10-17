@@ -1,6 +1,8 @@
 # ReMotion
 
-A browser-local hand-movement visualization MVP. Record **Finger Spread & Close**, calibrate a comfortable reference, and replay estimated 3D landmarks alongside a reference ghost. This is a technology demonstration, not a validated clinical assessment or treatment.
+A hand-movement visualization MVP with optional, consented clinician sharing. Record **Finger Spread & Close**, calibrate a comfortable reference, and replay estimated 3D landmarks alongside a reference ghost. This is a technology demonstration, not a validated clinical assessment or treatment.
+
+See [backend setup and clinician dashboard](server/README.md) for TigerData, R2/S3, Gemini, offline uploads, and the local synthetic demo. Live cloud verification requires configured credentials.
 
 ## Run
 
@@ -53,7 +55,7 @@ A browser test on a known hand image verifies that the installed detector return
 
 ## Privacy and persistence
 
-The model and WASM assets are served locally. Guided Practice stores no webcam video or still images. Movement Echoes separately stores imported or explicitly consented camera videos and extracted hand images locally; it does not upload them. IndexedDB (`remotion-local`) stores landmark coordinates, hand selection, calibration, timing, and session metadata on this browser/device. JSON exports contain the same information. Browser-data clearing removes saved sessions. Storage errors leave the session available for export.
+The model and WASM assets are served locally. Without clinician sharing, Practice stores landmarks only. Connected patient access and explicit consent also enable silent video capture, an IndexedDB backup, and video/hand-data uploads for clinician review. Movement Echoes separately stores imported or explicitly consented camera videos and extracted hand images locally; it does not upload them. IndexedDB (`remotion-local`) stores landmark coordinates, hand selection, calibration, timing, and session metadata on this browser/device. JSON exports contain the same information. Browser-data clearing removes saved sessions. Storage errors leave the session available for export.
 
 The 7.5 MB hand-landmarker model is included at `public/models/hand_landmarker.task`. `npm install` copies the matching package WASM files into `public/mediapipe/`. The project-local npm cache avoids permission problems with an existing user-level cache and is ignored by Git. Garden art, camera models and WASM have no runtime CDN dependencies. Voice lessons use the ElevenLabs service only after the user starts a lesson.
 

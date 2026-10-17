@@ -19,12 +19,15 @@ export interface MovementEchoesProps {
   onClose?: () => void;
   /** Delete matching host history only if that host explicitly linked a video. */
   onDeleted?: (id: string) => void | Promise<void>;
+  /** Authorized remote selection only: no browser recording merge or persistent image cache. */
+  providedOnly?: boolean;
 }
 export default function MovementEchoes({
   sessions: provided = [],
   initialFocusedSessionId,
   onClose,
   onDeleted,
+  providedOnly = false,
 }: MovementEchoesProps) {
   const [sessions, setSessions] = useState<EchoSession[]>([]),
     [focusId, setFocusId] = useState(initialFocusedSessionId ?? ''),
@@ -54,8 +57,7 @@ export default function MovementEchoes({
   const providedRef = useRef(provided);
   useEffect(() => {
     let live = true;
-    void echoRepository
-      .list()
+    void (providedOnly ? Promise.resolve([] as EchoSession[]) : echoRepository.list())
       .then((saved) => {
         if (!live) return;
         const merged = [
@@ -114,6 +116,8 @@ export default function MovementEchoes({
               if (!controller.signal.aborted) setUpdate(u);
             },
             controller.signal,
+            false,
+            !providedOnly,
           );
           if (!controller.signal.aborted)
             setCaches((c) => ({ ...c, [session.id]: cache }));
@@ -310,7 +314,7 @@ export default function MovementEchoes({
         {onClose && (
           <button className="echo-back" onClick={onClose}>
             <ArrowLeft size={20} />
-            Back to Progress
+            {providedOnly ? 'Back to dashboard' : 'Back to Progress'}
           </button>
         )}
         <div className="echo-title-row">
@@ -325,9 +329,7 @@ export default function MovementEchoes({
             <Layers size={30} />
           </span>
         </div>
-        <p className="echo-local">
-          Local preview · Videos and hand imagery stay in this browser.
-        </p>
+        {!providedOnly&&<p className="echo-local">Local preview · Videos and hand imagery stay in this browser.</p>}
       </header>
       {error && (
         <p className="echo-error" role="alert">
@@ -385,7 +387,7 @@ export default function MovementEchoes({
       {focus && (
         <>
           <div className="echo-demo-banner">
-            {focus.demonstration
+            {providedOnly ? focus.demonstration ? 'Fictional demo patient · Not a recovery history.' : 'Authorized patient recordings' : focus.demonstration
               ? 'Supplied demonstration footage · The filenames describe intended ranges, not measured progress. Physical left/right hand identity is unconfirmed.'
               : 'Your local recording · Compare the same selected hand and recording orientation.'}
           </div>
@@ -403,7 +405,7 @@ export default function MovementEchoes({
                   onClick={overlayWeek}
                 >
                   <Layers size={20} />
-                  Overlay Week
+                  {providedOnly ? 'Overlay recordings' : 'Overlay Week'}
                 </button>
               </div>
               <div className="echo-mode-row">
@@ -683,7 +685,7 @@ export default function MovementEchoes({
               Rebuild local outlines
             </button>
           </details>
-          <details
+          {!providedOnly&&<details
             className="echo-details"
             onToggle={(e) => setMarkers(e.currentTarget.open)}
           >
@@ -703,8 +705,8 @@ export default function MovementEchoes({
                 }}
               />
             )}
-          </details>
-          <div className="echo-delete">
+          </details>}
+          {!providedOnly&&<div className="echo-delete">
             {deleteId === focus.id ? (
               <>
                 <p>
@@ -733,10 +735,10 @@ export default function MovementEchoes({
                 Delete this local recording
               </button>
             )}
-          </div>
+          </div>}
         </>
       )}
-      <details
+      {!providedOnly&&<details
         className="echo-details"
         open={tools}
         onToggle={(e) => setTools(e.currentTarget.open)}
@@ -758,7 +760,7 @@ export default function MovementEchoes({
               Load remaining supplied demo clips
             </button>
           )}
-      </details>
+      </details>}
     </div>
   );
 }

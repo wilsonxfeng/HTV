@@ -13,3 +13,6 @@ internalprompts/
 !.env.example
 
 dist-echoes/
+dist-clinician/
+.remotion-data/
+!.env.server.example

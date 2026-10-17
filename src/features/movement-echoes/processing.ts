@@ -168,9 +168,10 @@ export async function buildGhostCache(
   update: Update = () => {},
   signal?: AbortSignal,
   force = false,
+  persist = true,
 ): Promise<GhostCache> {
   const key = cacheKey(session, repetitionIndex, config);
-  if (!force) {
+  if (persist && !force) {
     const stored = await echoRepository.cache(key);
     if (stored) return stored;
   }
@@ -331,7 +332,7 @@ export async function buildGhostCache(
       frames,
     };
     checkAbort(signal);
-    await echoRepository.saveCache(cache);
+    if (persist) await echoRepository.saveCache(cache);
     return cache;
   } finally {
     loaded.release();
