@@ -11,3 +11,5 @@ internalprompts/
 
 .env*
 !.env.example
+
+dist-echoes/

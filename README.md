@@ -53,7 +53,7 @@ A browser test on a known hand image verifies that the installed detector return
 
 ## Privacy and persistence
 
-The model and WASM assets are served locally. No webcam video or still images are stored or uploaded. IndexedDB (`remotion-local`) stores landmark coordinates, hand selection, calibration, timing, and session metadata on this browser/device. JSON exports contain the same information. Browser-data clearing removes saved sessions. Storage errors leave the session available for export.
+The model and WASM assets are served locally. Guided Practice stores no webcam video or still images. Movement Echoes separately stores imported or explicitly consented camera videos and extracted hand images locally; it does not upload them. IndexedDB (`remotion-local`) stores landmark coordinates, hand selection, calibration, timing, and session metadata on this browser/device. JSON exports contain the same information. Browser-data clearing removes saved sessions. Storage errors leave the session available for export.
 
 The 7.5 MB hand-landmarker model is included at `public/models/hand_landmarker.task`. `npm install` copies the matching package WASM files into `public/mediapipe/`. The project-local npm cache avoids permission problems with an existing user-level cache and is ignored by Git. Garden art, camera models and WASM have no runtime CDN dependencies. Voice lessons use the ElevenLabs service only after the user starts a lesson.
 
@@ -106,3 +106,10 @@ The app supplies lesson cues to the agent and handles explicit user transcripts 
 Unit and component tests cover reply parsing, negation/ambiguity, exercise definitions, measured calibration, spoken progression, countdown cancellation, and partial-session preservation when voice disconnects. A real person should still check speech recognition, end-to-end timing, and hand capture on their device.
 
 SDK documentation: [ElevenLabs React SDK](https://elevenlabs.io/docs/eleven-agents/libraries/react)
+
+
+## Movement Echoes
+
+Progress → Movement Echoes opens real-video hand ghost comparison. The four supplied demonstration clips are bundled unchanged, with reviewed phase samples for quick local loading. Three clips animate through detected cycles; the low-range clip is an explicitly static pose. Imported or consented new videos and derived cutouts use a separate local database. There is no voice upload or garden reward side effect.
+
+See [Movement Echoes](docs/MOVEMENT_ECHOES.md), [capture guide](docs/MOVEMENT_ECHOES_CAPTURE_GUIDE.md), and [merge handoff](docs/MOVEMENT_ECHOES_MERGE.md). `npm run dev:echoes` launches the independent harness; `npm run build:echoes` builds it.
