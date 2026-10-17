@@ -8,3 +8,6 @@ public/mediapipe/*
 
 .npm-cache/
 internalprompts/
+
+.env*
+!.env.example

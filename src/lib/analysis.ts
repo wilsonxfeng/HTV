@@ -75,7 +75,7 @@ export function analyzeSession(session: MotionSession): SessionAnalysis {
   const eligible = result.pairs.flatMap(pair => pair.attainment === null ? [] : [pair.attainment]);
   result.targetAttainment = eligible.length ? eligible.reduce((sum, n) => sum + n, 0) / eligible.length : null;
 
-  const sourceLabel = session.calibration.source === 'demo' ? 'sample reference' : session.calibration.source === 'clinician' ? 'configured reference' : 'personal reference';
+  const sourceLabel = session.calibration.source === 'demo' ? 'sample reference' : session.calibration.source === 'clinician' ? 'configured reference' : session.calibration.source === 'exemplar' ? 'video exemplar' : 'personal reference';
   for (const hold of sufficientHolds) {
     FINGER_PAIRS.forEach((pair, i) => {
       if (target[i] - neutral[i] < MIN_TARGET_CHANGE) return;

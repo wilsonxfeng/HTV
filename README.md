@@ -18,7 +18,7 @@ npm run build
 npm run preview
 ```
 
-The production preview is normally http://localhost:4173. Deploy `dist/` to any static HTTPS host. Camera access requires localhost or HTTPS. No server API, authentication, account, paid service, or API key is needed.
+The production preview is normally http://localhost:4173. Deploy `dist/` to any static HTTPS host. Camera access requires localhost or HTTPS. The camera and movement features need no backend or API key. Optional voice coaching connects to the configured ElevenLabs agent.
 
 ```sh
 npm test
@@ -54,7 +54,7 @@ A browser test on a known hand image verifies that the installed detector return
 
 The model and WASM assets are served locally. No webcam video or still images are stored or uploaded. IndexedDB (`remotion-local`) stores landmark coordinates, hand selection, calibration, timing, and session metadata on this browser/device. JSON exports contain the same information. Browser-data clearing removes saved sessions. Storage errors leave the session available for export.
 
-The 7.5 MB hand-landmarker model is included at `public/models/hand_landmarker.task`. `npm install` copies the matching package WASM files into `public/mediapipe/`. The project-local npm cache avoids permission problems with an existing user-level cache and is ignored by Git. The application has no runtime CDN dependencies.
+The 7.5 MB hand-landmarker model is included at `public/models/hand_landmarker.task`. `npm install` copies the matching package WASM files into `public/mediapipe/`. The project-local npm cache avoids permission problems with an existing user-level cache and is ignored by Git. Garden art, camera models and WASM have no runtime CDN dependencies. Optional voice coaching uses the ElevenLabs service only after the user starts it.
 
 ## Stack and structure
 
@@ -66,11 +66,11 @@ The 7.5 MB hand-landmarker model is included at `public/models/hand_landmarker.t
 
 `src/components/ExerciseFlow.tsx` manages preparation, calibration, countdown and recording. `src/lib/useHandTracker.ts` owns model/camera lifecycle and accurate canvas overlays. `HandStage.tsx` renders the skeletons, vectors and floor. `Studio.tsx` combines replay and measurement inspection. Pure geometry and evaluation live in `src/lib/geometry.ts` and `analysis.ts`.
 
-WebGL 2 is needed for 3D. A labeled 2D fallback preserves playback and measurements if unavailable. The app is desktop-first and adapts to narrower screens. Main-thread CPU inference is capped to roughly 18 FPS; slower hardware may show lower coverage. A future worker implementation can improve responsiveness.
+WebGL 2 is needed for 3D. A labeled 2D fallback preserves playback and measurements if unavailable. The app is mobile-first, with larger layouts for tablets and desktops. Main-thread CPU inference is capped to roughly 18 FPS; slower hardware may show lower coverage. A future worker implementation can improve responsiveness.
 
 ## Validation and limits
 
-The strict production build and 16 geometry/evaluation tests pass. Tests cover rigid-transform and scale invariance, depth preservation, pair angles, personalized and clinician targets, replay gaps, insufficient data, hold coverage, overshoot, and synthetic session evaluation. Browser checks cover real MediaPipe model initialization/inference, 3D rendering, replay, layer controls, local persistence and responsive layout. No automated test validates neurological recovery, clinical accuracy, or a person's real webcam exercise. A complete live-hand session must still be checked with a person and webcam before a live demo.
+The strict production build and 26 tests pass. Tests cover rigid-transform and scale invariance, depth preservation, pair angles, personalized and clinician targets, replay gaps, insufficient data, hold coverage, overshoot, synthetic session evaluation, daily garden rewards, and reference-video extraction/cancellation. Browser checks cover real MediaPipe model initialization/inference, 3D rendering, replay, layer controls, local persistence and responsive layout. No automated test validates neurological recovery, clinical accuracy, or a person's real webcam exercise. A complete live-hand session must still be checked with a person and webcam before a live demo.
 
 ## Exercise context and assets
 
@@ -81,4 +81,23 @@ Written exercise resources were inspected:
 
 The two supplied YouTube videos were not available for content inspection; no implementation claim relies on having watched them. Follow a clinician's prescribed range and stop if uncomfortable.
 
-The model comes from [Google's MediaPipe model distribution](https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task). See [Google's Hand Landmarker documentation](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker/web_js) for package/model terms and behavior. All app visuals are CSS/SVG/Three.js; there is no stock photography.
+The model comes from [Google's MediaPipe model distribution](https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task). See [Google's Hand Landmarker documentation](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker/web_js) for package/model terms and behavior. Interface visuals use CSS, SVG, Three.js and locally bundled original generated garden artwork; there is no stock photography.
+
+
+## Garden mobile interface
+
+The Home, Practice, Garden and Progress tabs are designed for phone screens, with a warm cream/green palette and original local gouache artwork. Motion Studio still renders interactive estimated 3D landmarks. Measurement details are expandable, and Progress includes session history, comparison, exports and a local clinician preview.
+
+Garden growth is derived from completed camera recordings in the existing IndexedDB database. One completed local calendar day supplies one watering; four practice days produce a flower. Samples and partial sessions do not contribute. Extra repetitions on the same day do not accelerate rewards. Rest days never remove flowers. Deleting the underlying recordings or clearing browser storage changes the derived garden. No schema migration is required; completed legacy recordings remain supported.
+
+Reference-video import from the upstream coaching update is available while setting a target, after neutral calibration. The resulting video example is labeled distinctly in target review and replay. All video decoding and MediaPipe processing stay local.
+
+See `ASSET_CREDITS.md` for generated artwork provenance and reviewed third-party alternatives.
+
+## Optional voice coach
+
+Practice includes an optional, user-started ElevenLabs voice coach. The public default agent is `agent_7501m54dgcmbevh8z9ma1ft00khx`; override it with `VITE_ELEVENLABS_AGENT_ID`. No secret API key belongs in a Vite environment variable. If the agent requires authentication, a server-issued conversation token is needed; this client-only prototype is configured for a public agent.
+
+The coach requests microphone access only when started. Microphone audio and the current exercise step are shared with ElevenLabs; camera frames, landmark arrays and saved history are not sent. Mute, stop, connection error recovery and visible coach captions are provided. Leaving Practice ends the voice session through the SDK provider cleanup. Speech does not control calibration, recording or repetitions. This optional coach is the current integration checkpoint; the separate `feature/elevenlabs-voice-coach` implementation described in the merge handoff has not yet been supplied on the remote. Its variable-timing session evaluator, silent video recording, clinician summaries and persistent reward callbacks are not included in this checkpoint.
+
+SDK documentation: https://elevenlabs.io/docs/eleven-agents/libraries/react

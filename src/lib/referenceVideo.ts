@@ -2,57 +2,39 @@ import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
 import { averageHands, normalizeHand, pairAngles } from './geometry';
 import type { Vec3 } from './types';
 
-export interface ReferenceVideoResult {
-  neutral: Vec3[];
-  target: Vec3[];
-  frames: number;
-  duration: number;
-}
-
+export interface ReferenceVideoResult { neutral: Vec3[]; target: Vec3[]; frames: number; duration: number }
 type Progress = (value: number) => void;
-
-function waitForMetadata(video: HTMLVideoElement): Promise<void> {
-  if (video.readyState >= 1) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    video.addEventListener('loadedmetadata', () => resolve(), { once: true });
-    video.addEventListener('error', () => reject(new Error('The reference video could not be read.')), { once: true });
-  });
+function assertActive(signal?: AbortSignal) {
+  if (signal?.aborted) throw new DOMException('Reference import cancelled.', 'AbortError');
 }
-
-function seek(video: HTMLVideoElement, time: number): Promise<void> {
+function waitForVideo(video: HTMLVideoElement, event: 'loadedmetadata' | 'seeked', signal?: AbortSignal, start?: () => void): Promise<void> {
+  assertActive(signal);
   return new Promise((resolve, reject) => {
+    const cleanup = () => { clearTimeout(timeout); video.removeEventListener(event, done); video.removeEventListener('error', fail); signal?.removeEventListener('abort', cancel); };
     const done = () => { cleanup(); resolve(); };
-    const fail = () => { cleanup(); reject(new Error('The reference video could not be decoded.')); };
-    const cleanup = () => {
-      video.removeEventListener('seeked', done);
-      video.removeEventListener('error', fail);
-    };
-    video.addEventListener('seeked', done, { once: true });
-    video.addEventListener('error', fail, { once: true });
-    video.currentTime = time;
+    const fail = () => { cleanup(); reject(new Error('The reference video could not be decoded. Try another video format.')); };
+    const cancel = () => { cleanup(); reject(new DOMException('Reference import cancelled.', 'AbortError')); };
+    const timeout = window.setTimeout(fail, 15000);
+    video.addEventListener(event, done, { once: true }); video.addEventListener('error', fail, { once: true }); signal?.addEventListener('abort', cancel, { once: true });
+    try { start?.(); } catch { fail(); }
   });
 }
-
-/**
- * Extracts a candidate neutral and comfortable target from a local exemplar video.
- * The video is decoded in memory; only the aggregate landmarks are returned.
- * This is an exemplar, not proof that the person in the clip is a clinical gold standard.
- */
-export async function extractReferenceFromVideo(file: File, onProgress: Progress = () => {}): Promise<ReferenceVideoResult> {
+/** Decodes a local exemplar in memory; only aggregate landmarks are retained. */
+export async function extractReferenceFromVideo(file: File, onProgress: Progress = () => {}, signal?: AbortSignal): Promise<ReferenceVideoResult> {
+  assertActive(signal);
   if (!file.type.startsWith('video/')) throw new Error('Choose a video file.');
   if (file.size > 250 * 1024 * 1024) throw new Error('Choose a video smaller than 250 MB.');
   const url = URL.createObjectURL(file);
   const video = document.createElement('video');
-  video.muted = true;
-  video.playsInline = true;
-  video.preload = 'metadata';
-  video.src = url;
+  video.muted = true; video.playsInline = true; video.preload = 'auto'; video.src = url;
   let detector: HandLandmarker | null = null;
   try {
-    await waitForMetadata(video);
+    if (video.readyState < 1) await waitForVideo(video, 'loadedmetadata', signal);
     const duration = Number.isFinite(video.duration) ? video.duration : 0;
-    if (!duration || duration > 90) throw new Error('Choose a reference clip between 1 and 90 seconds.');
+    if (duration < 1 || duration > 90) throw new Error('Choose a reference clip between 1 and 90 seconds.');
+    assertActive(signal);
     const files = await FilesetResolver.forVisionTasks(`${import.meta.env.BASE_URL}mediapipe`);
+    assertActive(signal);
     detector = await HandLandmarker.createFromOptions(files, {
       baseOptions: { modelAssetPath: `${import.meta.env.BASE_URL}models/hand_landmarker.task`, delegate: 'CPU' },
       runningMode: 'VIDEO', numHands: 1,
@@ -61,9 +43,11 @@ export async function extractReferenceFromVideo(file: File, onProgress: Progress
     const samples: { points: Vec3[]; spread: number }[] = [];
     const interval = Math.max(1 / 12, Math.min(0.12, duration / 180));
     const total = Math.max(1, Math.ceil(duration / interval));
-    for (let index = 0; index < total; index += 1) {
+    for (let index = 0; index < total; index++) {
+      assertActive(signal);
       const time = Math.min(duration - 0.001, index * interval);
-      await seek(video, time);
+      if (video.readyState < 2 || Math.abs(video.currentTime-time) > 0.0001) await waitForVideo(video, 'seeked', signal, () => { video.currentTime = time; });
+      assertActive(signal);
       const result = detector.detectForVideo(video, Math.round(time * 1000));
       const world = result.worldLandmarks[0];
       const points = world ? normalizeHand(world.map(point => ({ x: point.x, y: point.y, z: point.z }))) : [];
@@ -76,17 +60,11 @@ export async function extractReferenceFromVideo(file: File, onProgress: Progress
     const bandSize = Math.max(3, Math.floor(ordered.length * 0.15));
     const neutral = averageHands(ordered.slice(0, bandSize).map(sample => sample.points));
     const target = averageHands(ordered.slice(-bandSize).map(sample => sample.points));
-    const neutralAngles = pairAngles(neutral);
-    const targetAngles = pairAngles(target);
-    if (!neutralAngles.length || !targetAngles.length || !targetAngles.slice(1).some((angle, index) => angle - neutralAngles[index + 1] >= 2)) {
-      throw new Error('The clip did not show a clear together-to-spread movement. Choose a clip with the full exercise visible.');
-    }
+    const neutralAngles = pairAngles(neutral); const targetAngles = pairAngles(target);
+    if (!neutralAngles.length || !targetAngles.length || !targetAngles.slice(1).some((angle, index) => angle - neutralAngles[index + 1] >= 2)) throw new Error('The clip did not show a clear together-to-spread movement. Choose a clip with the full exercise visible.');
     onProgress(1);
     return { neutral, target, frames: samples.length, duration };
   } finally {
-    detector?.close();
-    video.removeAttribute('src');
-    video.load();
-    URL.revokeObjectURL(url);
+    detector?.close(); video.removeAttribute('src'); video.load(); URL.revokeObjectURL(url);
   }
 }

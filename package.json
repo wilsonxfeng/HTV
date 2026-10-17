@@ -1,6 +1,37 @@
 {
-  "name": "remotion", "private": true, "version": "1.0.0", "type": "module",
-  "scripts": { "dev": "vite --host 0.0.0.0", "build": "tsc -b && vite build", "preview": "vite preview --host 0.0.0.0", "test": "vitest run", "postinstall": "node scripts/copy-mediapipe.mjs" },
-  "dependencies": { "@mediapipe/tasks-vision": "1.1.1", "@react-three/drei": "10.7.9", "@react-three/fiber": "9.8.2", "idb": "^8.0.3", "lucide-react": "^0.468.0", "react": "19.3.1", "react-dom": "19.3.1", "three": "^0.183.2", "zustand": "^5.0.8" },
-  "devDependencies": { "@tailwindcss/vite": "4.3.3", "@types/node": "^24.10.0", "@types/react": "^19.2.2", "@types/react-dom": "^19.2.2", "@types/three": "^0.183.1", "@vitejs/plugin-react": "^5.1.1", "tailwindcss": "4.3.3", "typescript": "^5.9.3", "vite": "8.3.4", "vitest": "5.0.5" }
+  "name": "remotion",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "postinstall": "node scripts/copy-mediapipe.mjs"
+  },
+  "dependencies": {
+    "@elevenlabs/react": "^1.18.0",
+    "@mediapipe/tasks-vision": "1.1.1",
+    "@react-three/drei": "10.7.9",
+    "@react-three/fiber": "9.8.2",
+    "idb": "^8.0.3",
+    "lucide-react": "^0.468.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "three": "^0.183.2",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@types/three": "^0.183.1",
+    "@vitejs/plugin-react": "^5.1.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
+  }
 }

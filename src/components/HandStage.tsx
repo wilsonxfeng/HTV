@@ -28,9 +28,9 @@ type PointSource = { current: Vec3[] };
 const FINGERTIPS = [4, 8, 12, 16, 20];
 const FINGER_NAMES = ['Thumb', 'Index', 'Middle', 'Ring', 'Little'];
 const UP = new THREE.Vector3(0, 1, 0);
-const IVORY = '#d3eee8';
-const MINT = '#64e7c9';
-const AMBER = '#f9be72';
+const IVORY = '#b7695d';
+const MINT = '#426e5b';
+const AMBER = '#99651a';
 
 function fingerForPoint(index: number) {
   return index === 0 ? -1 : Math.min(4, Math.floor((index - 1) / 4));
@@ -168,7 +168,7 @@ function HandSkeleton({ source, ghost = false, selectedPair, onSelectFinger }: {
   };
   return <group ref={group}>
     <mesh geometry={palmGeometry} renderOrder={ghost ? 0 : 1}>
-      <meshStandardMaterial color={ghost ? '#4ddec5' : '#b4d6cf'} transparent opacity={ghost ? 0.045 : 0.07}
+      <meshStandardMaterial color={ghost ? '#58806a' : '#cc9380'} transparent opacity={ghost ? 0.045 : 0.07}
         side={THREE.DoubleSide} roughness={0.45} metalness={0.3} depthWrite={false} />
     </mesh>
     {HAND_CONNECTIONS.map((connection, index) => <mesh
@@ -176,7 +176,7 @@ function HandSkeleton({ source, ghost = false, selectedPair, onSelectFinger }: {
       onPointerOver={event => handlePointer(event, connection[1])} onPointerOut={clearPointer}
       onClick={event => choose(event, connection[1])} renderOrder={ghost ? 0 : 2}>
       <cylinderGeometry args={[0.72, 1, 1, 10]} />
-      {ghost ? <meshBasicMaterial color="#30e3be" transparent opacity={0.34} depthWrite={false} toneMapped={false} /> :
+      {ghost ? <meshBasicMaterial color="#426e5b" transparent opacity={0.58} depthWrite={false} toneMapped={false} /> :
         <meshPhysicalMaterial color={color(connection[1])} metalness={0.45} roughness={0.24}
           clearcoat={0.9} emissive={color(connection[1])} emissiveIntensity={0.11} />}
     </mesh>)}
@@ -185,7 +185,7 @@ function HandSkeleton({ source, ghost = false, selectedPair, onSelectFinger }: {
       onPointerOver={event => handlePointer(event, index)} onPointerOut={clearPointer}
       onClick={event => choose(event, index)} renderOrder={ghost ? 0 : 3}>
       <sphereGeometry args={[ghost ? 0.034 : index === 0 ? 0.058 : FINGERTIPS.includes(index) ? 0.041 : 0.048, 16, 12]} />
-      {ghost ? <meshBasicMaterial color="#47efce" transparent opacity={0.5} depthWrite={false} toneMapped={false} /> :
+      {ghost ? <meshBasicMaterial color="#426e5b" transparent opacity={0.7} depthWrite={false} toneMapped={false} /> :
         <meshPhysicalMaterial color={color(index)} metalness={0.55} roughness={0.22}
           emissive={color(index)} emissiveIntensity={0.17} clearcoat={1} />}
     </mesh>)}
@@ -258,16 +258,16 @@ function Scene({ recorded, reference, showRecorded = true, showReference = true,
   }, -1);
   return <>
     <ambientLight intensity={0.8} />
-    <directionalLight position={[2, 5, 6]} intensity={3.4} color="#e2fff7" />
-    <directionalLight position={[-4, 2, 0]} intensity={2.2} color="#7dbaee" />
-    <pointLight position={[1, 0.4, -3]} intensity={9} distance={8} color="#43ddc1" />
+    <directionalLight position={[2, 5, 6]} intensity={3.4} color="#fff5df" />
+    <directionalLight position={[-4, 2, 0]} intensity={2.2} color="#fff0d4" />
+    <pointLight position={[1, 0.4, -3]} intensity={9} distance={8} color="#b4d2a8" />
     <CameraRig resetKey={resetKey} preview={preview} animated={animate && !reducedMotion} />
     <Grid position={[0, -0.30, 0]} args={[20, 20]} cellSize={0.4} cellThickness={0.45}
-      cellColor="#24353c" sectionSize={2} sectionThickness={0.7} sectionColor="#304b53"
+      cellColor="#d5dccb" sectionSize={2} sectionThickness={0.7} sectionColor="#c0cdb7"
       fadeDistance={14} fadeStrength={2} infiniteGrid followCamera={false} />
     <mesh position={[-0.05, -0.29, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[1.52, 1.528, 96]} />
-      <meshBasicMaterial color="#65d3bc" transparent opacity={0.12} depthWrite={false} />
+      <meshBasicMaterial color="#76946c" transparent opacity={0.12} depthWrite={false} />
     </mesh>
     <group rotation={[0, -0.12, -0.12]} position={[0.08, 0.06, 0]}>
       {showReference && <HandSkeleton source={referenceSource} ghost />}
