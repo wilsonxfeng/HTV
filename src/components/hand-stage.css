@@ -1,0 +1,18 @@
+.hand-stage { position: relative; width: 100%; height: 100%; min-height: 280px; isolation: isolate; overflow: hidden; background: #091116; }
+.hand-stage canvas { position: relative; z-index: 1; display: block; touch-action: none; outline: none; }
+.hand-stage-atmosphere { position: absolute; z-index: 0; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 47% 43%, rgba(51, 113, 111, .14), transparent 56%), radial-gradient(ellipse at 78% 20%, rgba(77, 98, 145, .06), transparent 60%); }
+.hand-stage-vignette { position: absolute; z-index: 2; inset: 0; pointer-events: none; background: linear-gradient(0deg, rgba(9,17,22,.30), transparent 24%), radial-gradient(ellipse at 50% 45%, transparent 40%, rgba(7,12,17,.23) 100%); }
+.hand-stage-preview { background: transparent; }
+.hand-stage-preview .hand-stage-vignette { background: radial-gradient(ellipse at 50% 45%, transparent 38%, rgba(9,17,22,.32) 100%); }
+.hand-pair-label { position: relative; display: flex; flex-direction: column; padding: 10px 13px 9px; color: #f3c78f; background: rgba(29, 29, 27, .85); border: 1px solid rgba(241, 187, 113, .25); border-radius: 7px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; white-space: nowrap; box-shadow: 0 6px 25px #0003; }
+.hand-pair-label > span { font-size: 13px; line-height: 1.3; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.hand-pair-label small { margin-top: 4px; color: #b8a48a; font-size: 7px; letter-spacing: .14em; }
+.hand-pair-label i { position: absolute; width: 1px; height: 17px; background: #d9a86b66; bottom: -18px; left: 50%; }
+.hand-pair-label i::after { content: ''; position: absolute; width: 4px; height: 4px; left: -1.5px; bottom: -3px; border-radius: 50%; background: #f6bd77; }
+.hand-stage-fallback { height: 100%; min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #91a9af; position: relative; z-index: 1; }
+.hand-stage-fallback svg { width: min(100%, 340px); max-height: 75%; }
+.hand-stage-fallback-label { font-size: 13px; color: #d3eee8; letter-spacing: .02em; }
+.hand-stage-fallback p { font-size: 11px; line-height: 1.6; margin: 7px 0 0; max-width: 230px; }
+.hand-stage-loading { position: absolute; inset: 0; display: flex; gap: 10px; align-items: center; justify-content: center; color: #7d969c; font-size: 12px; letter-spacing: .03em; }
+.hand-stage-loading span { width: 5px; height: 5px; border-radius: 50%; background: #79dfc6; box-shadow: 0 0 12px #79dfc655; }
+.hand-stage-preview{min-height:0}.hand-stage-preview .hand-stage-fallback{min-height:0;padding:12px}.hand-stage-preview .hand-stage-fallback p{font-size:9px}

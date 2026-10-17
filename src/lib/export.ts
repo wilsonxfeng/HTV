@@ -1,0 +1,2 @@
+import type { MotionSession } from './types';
+export function exportSession(session:MotionSession){const url=URL.createObjectURL(new Blob([JSON.stringify({format:'remotion-session',version:1,...session},null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`remotion-${session.source}-${session.id}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
