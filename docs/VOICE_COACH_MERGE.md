@@ -6,7 +6,8 @@
 - Exact base commit: `d194dd542d6215e82df4e70931619ebd41fd54eb`
 - Worktree: `/Users/wilsonxfeng/.codex/worktrees/elevenlabs-voice-coach/HTV`
 - Original working copy: `/Users/wilsonxfeng/Documents/Projects/HTV` on `main`; its uncommitted reference-video/UI changes were preserved.
-- Implementation commit(s): resolve the exact committed hashes with `git log --oneline d194dd542d6215e82df4e70931619ebd41fd54eb..feature/elevenlabs-voice-coach`. The handoff response includes the final hash. A commit cannot embed its own hash inside a tracked document.
+- Implementation commit: `1cfdfdba1ec9ec4afefa0654931483541b71e0d5` (`feat: add isolated ElevenLabs rehabilitation coach`).
+- A subsequent documentation-only commit records this implementation hash and final browser checks. List both with `git log --oneline d194dd542d6215e82df4e70931619ebd41fd54eb..feature/elevenlabs-voice-coach`.
 - No automatic merge, cherry-pick, push, PR creation, or UI-branch overwrite was performed.
 
 ## New dependencies
@@ -33,6 +34,8 @@ Expected conflicts are limited to dependency/script additions, `.gitignore` addi
 ## Merge procedure for the integration engineer
 
 Review this branch from its own worktree. Merge or cherry-pick its implementation commit(s) only after the UI branch is ready. Resolve shared package/ignore additions by combining them. Then perform the following small host integration edits yourself; this feature has not pre-emptively made them:
+
+For a reviewed integration checkout with a clean working tree, `git cherry-pick 1cfdfdba1ec9ec4afefa0654931483541b71e0d5` applies all implementation files and original documentation. Alternatively merge `feature/elevenlabs-voice-coach` after your UI work is committed, to include the documentation receipt too. These are instructions for the integrating developer; they were not run against `main` by this feature.
 
 1. Add a route/page for `VoiceCoachExperience` using your existing routing convention.
 2. Point your existing “Start Today’s Practice” action at that route.
@@ -94,6 +97,7 @@ Private connection support is implemented through a required-auth, required-rate
 - `npm run build`: original app production build and strict TypeScript pass.
 - `npm run build:voice`: independent harness production build and strict TypeScript pass.
 - Browser: real SDK public-agent connection/response; real MediaPipe initialization using a simulated camera; silent MediaRecorder video saved and replayed after page reload; no hand yielded zero repetitions and an unassessable result; replay output had zero audio tracks; sample/results fit a 390×844 viewport without horizontal overflow.
+- Final browser checks: the supplied live agent spoke the ReMotion introduction after the runtime cue; microphone mute and disconnect returned cleanly to text mode. Denied camera access exposed a working retry, then the simulated camera initialized. On a 390×844 viewport, Pause/Stop stayed visible at the top while viewing the camera, each about 58 px tall, with no horizontal overflow.
 - Main worktree was not edited. `git diff --name-only <base>..HEAD` plus the final commit show the additive boundary.
 
 The repository had no initialized no-mistakes gate. Its initialization changes shared Git remotes/hooks, so it was not performed while another engineer owns the main working copy. Validation used the direct test/build/browser checks above; no automated gate/remote CI pass is claimed.
