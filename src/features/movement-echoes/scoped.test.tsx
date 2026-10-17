@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, act } from '@testing-library/react';
+import { cleanup, render, screen, act, fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import MovementEchoes from './MovementEchoes';
 import type { EchoSession } from './types';
@@ -20,4 +20,17 @@ describe('authorized remote comparison scope',()=>{
     expect(screen.queryByText('Original video and manual phase markers')).toBeNull();
     expect(mock.saveCache).not.toHaveBeenCalled();
   });
+  it('keeps existing overlay selection while evidence focuses an added authorized session',async()=>{
+    const first=clip('authorized-a'),second=clip('authorized-b'),third=clip('authorized-c');
+    const props={providedOnly:true,sessions:[first,second]};
+    const view=render(<MovementEchoes {...props}/>);
+    await act(async()=>{});
+    const overlay=screen.getByRole('checkbox',{name:'Show past sessions'}) as HTMLInputElement;
+    fireEvent.click(overlay);expect(overlay.checked).toBe(true);
+    await act(async()=>{view.rerender(<MovementEchoes {...props} sessions={[first,second,third]} evidenceFocus={{sessionId:third.id,repetitionIndex:null,timestampMs:null,token:1}}/>);});
+    expect((screen.getByRole('checkbox',{name:'Show past sessions'}) as HTMLInputElement).checked).toBe(true);
+    const chips=[...document.querySelectorAll('.echo-session-chips button')];expect(chips).toHaveLength(3);
+    expect(chips.find(c=>c.textContent?.includes('authorized-c'))?.getAttribute('aria-pressed')).toBe('true');
+  });
+
 });

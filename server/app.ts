@@ -1,3 +1,5 @@
+import { GeminiIntentParser, intentSchema, requestSchema, presetIntent, type IntentParser } from './features/ask-remotion/intentParser';
+import { executeSearch } from './features/ask-remotion/queryExecutor';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
@@ -11,7 +13,7 @@ import type { ReportGenerator } from './reports';
 import { LocalVideoStore } from './videos';
 import { completeSchema, createSchema, HttpError } from './validation';
 
-export async function buildApi(config: Config, repository: ClinicalRepository, reports?: ReportGenerator) {
+export async function buildApi(config: Config, repository: ClinicalRepository, reports?: ReportGenerator, intentParser?: IntentParser) {
   const app = Fastify({ bodyLimit: 12 * 1024 * 1024, logger: false, requestTimeout: 30000, routerOptions: { maxParamLength: 4096 } });
   await app.register(cors, { origin: config.origin, methods: ['GET', 'POST', 'PUT', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization', 'Range'], exposedHeaders: ['Content-Range', 'Accept-Ranges'], credentials: false });
   await app.register(rateLimit, { max: 120, timeWindow: '1 minute' });
@@ -83,6 +85,14 @@ export async function buildApi(config: Config, repository: ClinicalRepository, r
   app.get<{ Params: { id: string } }>('/api/sessions/:id/video-url', async request => {
     const user = await principal(request.headers.authorization); const key = id(request.params.id); await sessionAccess(key, user);
     return repository.videoUrl(key);
+  });
+  const searchParser = intentParser ?? (config.geminiKey ? new GeminiIntentParser(config.geminiKey, config.geminiModel) : undefined);
+  app.post('/api/ask-remotion', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async request => {
+    const user = await principal(request.headers.authorization);
+    const input = requestSchema.parse(request.body); authorize(user, input.patientId, true);
+    if (!input.preset && !searchParser) throw new HttpError(503, 'Question interpretation is unavailable. Try a suggested search.');
+    const intent = input.preset ? presetIntent(input.preset, input.exerciseContext.side) : intentSchema.parse(await searchParser!.parse(input.question, input.exerciseContext));
+    return executeSearch(repository.db, input.patientId, intent, input.preset ? 'preset' : 'gemini');
   });
   const reportLocks = new Map<string, Promise<unknown>>();
   app.post<{ Params: { id: string } }>('/api/sessions/:id/report', { config: { rateLimit: { max: 8, timeWindow: '1 minute' } } }, async request => {

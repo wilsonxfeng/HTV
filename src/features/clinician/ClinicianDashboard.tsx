@@ -1,9 +1,11 @@
+import AskRemotionPanel from '../ask-remotion/AskRemotionPanel';
+import type { Evidence, EvidenceFocus } from '../ask-remotion/contracts';
 import { bodyDemoRepository } from '../body-exercises/bodyDemoRepository';
 import { bodyRegions, exerciseRegistry, getExercise, type BodyRegion } from '../body-exercises/exerciseRegistry';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, FileText, Leaf, LogOut, RefreshCw } from 'lucide-react';
 import type { EchoSession } from '../movement-echoes/types';
-import { fetchEchoSessions } from '../clinical-data/echoAdapter';
+import { toEchoSession, fetchEchoSessions } from '../clinical-data/echoAdapter';
 import { clinicalRepository, useClinicalAccess } from '../clinical-data/access';
 import type { PatientOverview, ProgressPoint, SessionDetail, SessionRecord, SessionRepository } from '../clinical-data/contracts';
 import AccessPanel from './AccessPanel';
@@ -20,6 +22,7 @@ export default function ClinicianDashboard({ onBack, repository: suppliedReposit
   const [selected, setSelected] = useState<string[]>([]), [focused, setFocused] = useState('');
   const [detail, setDetail] = useState<SessionDetail | null>(null), [video, setVideo] = useState<Blob | null>(null);
   const [error, setError] = useState(''), [loading, setLoading] = useState(false), [refresh, setRefresh] = useState(0), [reportBusy, setReportBusy] = useState(false);
+  const [evidenceFocus,setEvidenceFocus] = useState<EvidenceFocus>();
   const [echoes, setEchoes] = useState<EchoSession[] | null>(null), [echoBusy, setEchoBusy] = useState(false);
   const [hand, setHand] = useState<'Left' | 'Right'>('Right'), [target, setTarget] = useState('');
   const [region,setRegion]=useState<BodyRegion>('hand'),[exerciseId,setExerciseId]=useState('finger-spread-close');
@@ -67,10 +70,15 @@ export default function ClinicianDashboard({ onBack, repository: suppliedReposit
     finally { setReportBusy(false); }
   };
   const launchEchoes = async () => {
-    setEchoBusy(true); setError('');
+    setEchoBusy(true); setError('');setEvidenceFocus(undefined);
     try { setEchoes(await fetchEchoSessions(repository, selected)); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not load comparisons.'); }
     finally { setEchoBusy(false); }
+  };
+  const openEvidence = async (evidence: Evidence[], signal: AbortSignal) => {
+    const loaded = evidence.length===1 ? [toEchoSession(await repository.detail(evidence[0].sessionId,signal),await repository.video(evidence[0].sessionId,signal))] : await fetchEchoSessions(repository, evidence.map(e=>e.sessionId),signal);
+    if(signal.aborted)return;
+    const first=evidence[0];setEvidenceFocus({...first,token:Date.now()});setEchoes(current=>[...new Map([...(current??[]),...loaded].map(s=>[s.id,s])).values()]);
   };
   const toggle = (id: string) => setSelected(ids => ids.includes(id) ? ids.filter(value => value !== id) : ids.length < 4 ? [...ids, id] : ids);
   const history=sessions.filter(s=>s.exerciseId===exerciseId&&s.hand===hand);
@@ -82,8 +90,8 @@ export default function ClinicianDashboard({ onBack, repository: suppliedReposit
   const max = Math.max(30, ...plotted.map(p => p.angle! + 5));
   const x = (i: number) => { const first = Date.parse(plotted[0]?.startedAt ?? ''), last = Date.parse(plotted.at(-1)?.startedAt ?? ''); return last === first ? 300 : 50 + (Date.parse(plotted[i].startedAt) - first) / (last - first) * 500; };
   const y = (angle: number) => 190 - angle / max * 150;
-  if (echoes) return <Suspense fallback={<p>Loading comparisons…</p>}><MovementEchoes providedOnly cacheLocally={localDemo} sessions={echoes} initialFocusedSessionId={echoes[0]?.id} onClose={() => setEchoes(null)}/></Suspense>;
-  return <div className="clinical-shell">
+  const searchPanel=!localDemo && patientId && access?.role==='clinician' && repository===clinicalRepository ? <AskRemotionPanel patientId={patientId} exerciseId={exerciseId} side={hand} onOpen={openEvidence}/> : null;
+  return <><div className="clinical-shell">{searchPanel}</div>{echoes ? <Suspense fallback={<p>Loading comparisons…</p>}><MovementEchoes providedOnly cacheLocally={localDemo} sessions={echoes} initialFocusedSessionId={echoes[0]?.id} evidenceFocus={evidenceFocus} onClose={() => {setEchoes(null);setEvidenceFocus(undefined);}}/></Suspense> : <div className="clinical-shell">
     <header className="clinical-header"><div><span className="clinical-brand"><Leaf size={25}/>ReMotion<span>.</span></span><h1>Clinician dashboard</h1></div><div className="clinical-actions">{onBack&&<button className="btn btn-secondary" onClick={onBack}><ArrowLeft size={17}/>Home</button>}<button className="btn btn-secondary" onClick={()=>{setLocalDemo(v=>!v);setPatientId('');setEchoes(null);}}>{localDemo?'Patient records':'Knee video demo'}</button>{access&&<button className="btn btn-secondary" onClick={() => { setAccess(null); setPatients([]); setPatientId(''); }}><LogOut size={17}/>Disconnect</button>}</div></header>
     {!access?.patientId && !localDemo ? <AccessPanel/> : <>
       <div className="clinical-patient-bar"><label htmlFor="clinical-patient">Patient</label><select id="clinical-patient" value={patientId} onChange={event => setPatientId(event.target.value)}>{patients.map(p => <option key={p.id} value={p.id}>{p.displayName}</option>)}</select><button className="icon-button" aria-label="Refresh patient data" onClick={() => setRefresh(value => value + 1)}><RefreshCw size={20}/></button>{patient?.demonstration&&<span className="badge">{localDemo?'TEAM FOOTAGE · LOCAL DEMO':'FICTIONAL DEMO'}</span>}</div>
@@ -101,5 +109,5 @@ export default function ClinicianDashboard({ onBack, repository: suppliedReposit
       </section>
       <section className="clinical-section clinical-echoes panel" aria-label="Movement Echoes integration"><div><h2>Movement Echoes</h2><p>Select 2–4 recordings of the same exercise, side and camera view.</p></div><button className="btn btn-primary" disabled={selected.length<2||echoBusy} onClick={() => void launchEchoes()}>{echoBusy?'Loading…':`Compare${selected.length?` (${selected.length})`:''}`}</button></section>
     </>}
-  </div>;
+  </div>}</>;
 }

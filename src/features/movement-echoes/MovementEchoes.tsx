@@ -1,3 +1,4 @@
+import type { EvidenceFocus } from '../ask-remotion/contracts';
 import { getExercise } from '../body-exercises/exerciseRegistry';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Layers, RefreshCw, Trash2 } from 'lucide-react';
@@ -16,6 +17,7 @@ import './echoes.css';
 
 export interface MovementEchoesProps {
   sessions?: EchoSession[];
+  evidenceFocus?: EvidenceFocus;
   initialFocusedSessionId?: string;
   onClose?: () => void;
   /** Delete matching host history only if that host explicitly linked a video. */
@@ -29,6 +31,7 @@ export interface MovementEchoesProps {
 export default function MovementEchoes({
   sessions: provided = [],
   initialFocusedSessionId,
+  evidenceFocus,
   onClose,
   onDeleted,
   providedOnly = false,
@@ -98,6 +101,13 @@ export default function MovementEchoes({
     };
   }, []);
   useEffect(() => {
+    if(!providedOnly || !ready)return;
+    setSessions(current => {
+      const additions=provided.filter(s=>!current.some(c=>c.id===s.id));
+      return additions.length ? [...current,...additions] : current;
+    });
+  },[provided,providedOnly,ready]);
+  useEffect(() => {
     if (!ready || importing || !sessions.length) return;
     const controller = new AbortController();
     setPreparing(true);
@@ -143,6 +153,11 @@ export default function MovementEchoes({
     })();
     return () => controller.abort();
   }, [sessions, repChoices, config, importing, ready, retry]);
+  useEffect(() => {
+    if(!evidenceFocus || !sessions.some(s=>s.id===evidenceFocus.sessionId))return;
+    setFocusId(evidenceFocus.sessionId);setSideBySide(false);
+    if(evidenceFocus.repetitionIndex!==null)setRepChoices(current=>current[evidenceFocus.sessionId]===evidenceFocus.repetitionIndex?current:{...current,[evidenceFocus.sessionId]:evidenceFocus.repetitionIndex!});
+  },[evidenceFocus,sessions]);
   const focus = sessions.find((s) => s.id === focusId);
   const comparison = useMemo(
     () =>
@@ -393,6 +408,7 @@ export default function MovementEchoes({
           </p>
         </section>
       ) : null}
+      {evidenceFocus && evidenceFocus.sessionId===focusId && <p className="echo-notice" role="status">Search evidence · {evidenceFocus.timestampMs===null?'Session measurement; exact timestamp unavailable.':`Recorded event at ${(evidenceFocus.timestampMs/1000).toFixed(2)}s · Repetition ${(evidenceFocus.repetitionIndex??0)+1}`}</p>}
       {focus && (
         <>
           <div className="echo-demo-banner">
@@ -438,6 +454,7 @@ export default function MovementEchoes({
                 <EchoViewer
                   sessions={sessions}
                   focusId={focus.id}
+                  evidenceFocus={evidenceFocus}
                   caches={caches}
                   repChoices={repChoices}
                   ghostIds={ghosts}
