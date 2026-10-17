@@ -17,7 +17,9 @@
     "api:token": "tsx server/token.ts",
     "build:clinician": "tsc -b && vite build --config vite.clinician.config.ts",
     "api:demo:seed": "DEMO_MODE=true SEED_DEMO=true tsx server/main.ts",
-    "api:provision": "tsx server/provision.ts"
+    "api:provision": "tsx server/provision.ts",
+    "dev:voice": "vite --config src/features/voice-coach/harness/vite.config.ts",
+    "build:voice": "tsc -b && vite build --config src/features/voice-coach/harness/vite.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",

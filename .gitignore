@@ -5,13 +5,10 @@ public/mediapipe/*
 !public/mediapipe/.gitkeep
 *.tsbuildinfo
 .evidence/
-
 .npm-cache/
 internalprompts/
-
 .env*
 !.env.example
-
 dist-echoes/
 dist-clinician/
 .remotion-data/
