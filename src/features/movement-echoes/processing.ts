@@ -170,6 +170,10 @@ export async function buildGhostCache(
   force = false,
   persist = true,
 ): Promise<GhostCache> {
+  if(session.trackingMode==='pose') {
+    const {buildBodyGhostCache}=await import('../body-echoes/bodyGhostCache');
+    return buildBodyGhostCache(session,repetitionIndex,config,update,signal,force,persist);
+  }
   const key = cacheKey(session, repetitionIndex, config);
   if (persist && !force) {
     const stored = await echoRepository.cache(key);

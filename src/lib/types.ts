@@ -1,4 +1,4 @@
-export interface Vec3 { x: number; y: number; z: number }
+export interface Vec3 { x: number; y: number; z: number; visibility?: number; presence?: number }
 export type HandSide = 'Left' | 'Right';
 export type ReferenceSource = 'personal' | 'clinician' | 'exemplar' | 'demo';
 export interface HandFrame { t: number; landmarks: Vec3[]; worldLandmarks?: Vec3[]; imageLandmarks?: Vec3[]; confidence: number; tracking: boolean; modelHandedness?: string }
@@ -10,9 +10,11 @@ export interface Calibration {
   createdAt: string;
   exemplarName?: string;
   exemplarFrames?: number;
+  imageNeutral?: Vec3[];
 }
-export interface MotionSession { id: string; exerciseId?: string; createdAt: string; hand: HandSide; duration: number; cycleDuration: number; frames: HandFrame[]; calibration: Calibration; source: 'camera' | 'demo'; completed?: boolean }
+export interface MotionSession { id: string; exerciseId?: string; createdAt: string; hand: HandSide; duration: number; cycleDuration: number; frames: HandFrame[]; calibration: Calibration; source: 'camera' | 'demo'; completed?: boolean; trackingMode?: 'hand' | 'pose'; bodyRegion?: 'hand' | 'arm' | 'leg' | 'core'; cameraView?: 'front' | 'side' | 'three-quarter'; targetSide?: HandSide; analysisVersion?: string; segmentationCacheVersion?: string; repetitionTarget?: number }
 export interface PairMetric { pair: string; indices: [number, number]; neutral: number; target: number; achieved: number; attainment: number | null }
 export interface Deviation { id: string; t: number; repetition: number; pair: string; indices: [number, number]; difference: number; actual: number; target: number; message: string }
-export interface SessionAnalysis { pairs: PairMetric[]; deviations: Deviation[]; targetAttainment: number | null; trackingQuality: number; validFrames: number; repetitions: number }
+export interface BodyAnalysis { primaryLabel: string; primaryValue: number | null; unit: string; neutralAngle: number | null; maximumAngle: number | null; movementRange: number | null; extensionFromNeutral: number | null; relativeDisplacement: number | null; timeToPeakSeconds: number | null; movementDurationSeconds: number; experimental: boolean; limitations: string[] }
+export interface SessionAnalysis { pairs: PairMetric[]; deviations: Deviation[]; targetAttainment: number | null; trackingQuality: number; validFrames: number; repetitions: number; body?: BodyAnalysis }
 export interface Phase { name: 'Together' | 'Spread' | 'Hold' | 'Close'; amount: number; repetition: number; progress: number }

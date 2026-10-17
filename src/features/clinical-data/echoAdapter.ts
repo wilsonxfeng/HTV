@@ -2,8 +2,16 @@ import { pairAngles } from '../../lib/geometry';
 import { compatible } from '../movement-echoes/geometry';
 import type { EchoSession } from '../movement-echoes/types';
 import type { SessionDetail, SessionRepository } from './contracts';
+import type { CreateSession, VideoMetadata } from './contracts';
+import type { MotionSession } from '../../lib/types';
+import { toBodyEchoSession } from '../body-echoes/BodyEchoAdapter';
+
+export function bodySessionMetadata(motion: MotionSession, video: VideoMetadata, patientId: string, demonstration: boolean): CreateSession {
+  return {id: motion.id, patientId, exerciseId: motion.exerciseId!, hand: motion.hand, startedAt: motion.createdAt, video, demonstration, videoKind: 'camera', trackingMode: motion.trackingMode, bodyRegion: motion.bodyRegion, cameraView: motion.cameraView, targetSide: motion.hand, analysisVersion: motion.analysisVersion, segmentationCacheVersion: motion.segmentationCacheVersion};
+}
 
 export function toEchoSession(detail: SessionDetail, video: Blob): EchoSession {
+  if (detail.motion.trackingMode === 'pose') return {...toBodyEchoSession(detail.motion, video, detail.video, detail.demonstration), repetitions: detail.repetitions};
   return {
     id: detail.id, name: new Date(detail.startedAt).toLocaleString(), createdAt: detail.startedAt,
     exerciseId: detail.exerciseId, selectedHand: detail.hand, mirrored: detail.video.mirrored,
@@ -23,7 +31,7 @@ export async function fetchEchoSessions(repository: SessionRepository, ids: stri
   const details = await Promise.all(ids.map(id => repository.detail(id, signal)));
   const focus = details[0];
   if (details.some(detail => detail.videoKind !== focus.videoKind)) throw Error('Compare camera recordings together or synthetic fixtures together.');
-  const descriptor = (detail: SessionDetail) => ({ exerciseId: detail.exerciseId, selectedHand: detail.hand, mirrored: detail.video.mirrored });
+  const descriptor = (detail: SessionDetail) => ({ exerciseId: detail.exerciseId, selectedHand: detail.hand, mirrored: detail.video.mirrored, trackingMode: detail.trackingMode, cameraView: detail.cameraView, analysisVersion: detail.analysisVersion, demonstration: detail.demonstration });
   if (details.some(detail => detail.patientId !== focus.patientId || !compatible(descriptor(focus), descriptor(detail)) || !detail.repetitions.some(rep => rep.valid))) throw Error('Choose recordings of the same patient, exercise, hand and orientation with detected cycles.');
   return Promise.all(details.map(async detail => toEchoSession(detail, await repository.video(detail.id, signal))));
 }

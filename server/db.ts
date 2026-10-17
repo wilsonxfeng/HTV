@@ -46,7 +46,7 @@ export function localDatabase(directory?: string): Database {
 
 export async function migrate(db: Database, timescale = true) {
   // Each file is transactional and repeatable; only apply Timescale in the configured cloud DB.
-  for (const name of timescale ? ['001_schema.sql', '002_timescale.sql'] : ['001_schema.sql']) {
+  for (const name of timescale ? ['001_schema.sql', '002_timescale.sql', '003_body_exercises.sql', '004_pose_timescale.sql'] : ['001_schema.sql', '003_body_exercises.sql']) {
     const sql = await readFile(new URL(`./migrations/${name}`, import.meta.url), 'utf8');
     await db.transaction(async tx => {
       for (const statement of sql.split(';').map(value => value.trim()).filter(Boolean)) await tx.query(statement);

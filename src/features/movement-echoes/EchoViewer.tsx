@@ -1,3 +1,5 @@
+import { baselineAnchors } from '../body-echoes/bodyAlignment';
+import { getExercise } from '../body-exercises/exerciseRegistry';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause, Play, RotateCcw, ScanLine } from 'lucide-react';
 import { frameAtTime, palmAnchors, phaseToTime, timeToPhase } from './geometry';
@@ -47,7 +49,8 @@ export default function EchoViewer({
   const [choices, setChoices] = useState<string[]>([]),
     [status, setStatus] = useState(''),
     [reduced, setReduced] = useState(false);
-  const [detail, setDetail] = useState(true);
+  const [detail, setDetail] = useState(focus.trackingMode !== 'pose');
+  useEffect(() => setDetail(focus.trackingMode !== 'pose'), [focus.trackingMode]);
   const [redraw, setRedraw] = useState(0);
   const waitingFrame = useRef(false);
   const decodeIds = JSON.stringify([...new Set([focusId, ...ghostIds])].sort());
@@ -221,9 +224,7 @@ export default function EchoViewer({
           focus.frames,
           (decodedMs ?? video.currentTime * 1000) - focus.landmarkOffsetMs,
         );
-        const target = tracked
-          ? palmAnchors(tracked.image, canvas.width, canvas.height)
-          : null;
+        const target = focus.trackingMode === 'pose' ? (tracked ? baselineAnchors(focus, canvas.width, canvas.height) : null) : tracked ? palmAnchors(tracked.image, canvas.width, canvas.height) : null;
         let unavailable = 0;
         const ids = reduced ? ghostIds.slice(0, 2) : ghostIds;
         if (target) {
@@ -250,7 +251,7 @@ export default function EchoViewer({
         }
         setStatus(
           !target
-            ? 'Hand alignment unavailable at this instant.'
+            ? 'Alignment unavailable at this instant.'
             : unavailable
               ? `${unavailable} outline${unavailable === 1 ? ' is' : 's are'} unavailable at this phase. Only reliable outlines are shown.`
               : '',
@@ -339,6 +340,7 @@ export default function EchoViewer({
         <video
           ref={videoRef}
           muted
+          controls={!rep}
           playsInline
           preload="auto"
           style={imageStyle}
@@ -348,8 +350,8 @@ export default function EchoViewer({
           ref={canvasRef}
           width={720}
           height={Math.round((720 * focus.videoHeight) / focus.videoWidth)}
-          style={imageStyle}
-          aria-label="Real hand ghost overlays. Use session buttons below to select a recording."
+          style={{...imageStyle,pointerEvents:rep?'auto':'none'}}
+          aria-label="Real video ghost overlays. Use session buttons below to select a recording."
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
             const ids = hitGhosts(
@@ -372,7 +374,7 @@ export default function EchoViewer({
           className="echo-frame-toggle"
           onClick={() => setDetail((v) => !v)}
         >
-          {detail ? 'Full frame' : 'Hand detail'}
+          {detail ? 'Full frame' : focus.trackingMode === 'pose' ? 'Movement detail' : 'Hand detail'}
         </button>
         {loading && (
           <div className="echo-stage-loading" role="status">
@@ -383,7 +385,7 @@ export default function EchoViewer({
           <div
             className="echo-hit-choices"
             role="group"
-            aria-label="Choose an overlapping hand"
+            aria-label="Choose an overlapping recording"
           >
             <p>Which recording?</p>
             {choices.map((id) => (
@@ -455,10 +457,10 @@ export default function EchoViewer({
             </span>
             <span>
               {phase < 0.46
-                ? 'Opening'
+                ? focus.trackingMode === 'pose' ? 'Moving' : 'Opening'
                 : phase > 0.54
-                  ? 'Closing'
-                  : 'Peak spread'}
+                  ? focus.trackingMode === 'pose' ? 'Returning' : 'Closing'
+                  : focus.trackingMode === 'pose' ? 'Peak movement' : 'Peak spread'}
             </span>
           </div>
         </div>
@@ -482,11 +484,11 @@ export default function EchoViewer({
         }}
       >
         <ScanLine size={20} />
-        Pause at peak spread
+        Pause at peak {focus.trackingMode === 'pose' ? 'movement' : 'spread'}
       </button>
       <p className="echo-alignment" role="status">
         {status ||
-          'Aligned at the palm. Recorded finger positions stay unchanged.'}
+          (focus.trackingMode === 'pose' ? `Aligned to the seated baseline · ${getExercise(focus.exerciseId).title}` : 'Aligned at the palm. Recorded finger positions stay unchanged.')}
         {reduced && ' Showing two ghosts to keep playback responsive.'}
       </p>
     </section>

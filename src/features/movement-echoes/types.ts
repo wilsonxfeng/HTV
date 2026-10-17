@@ -21,6 +21,11 @@ export interface Repetition {
   static?: boolean;
 }
 export interface EchoSession {
+  trackingMode?: 'hand' | 'pose';
+  bodyRegion?: 'hand' | 'arm' | 'leg' | 'core';
+  cameraView?: 'front' | 'side' | 'three-quarter';
+  baselineImage?: Vec3[];
+  analysisVersion?: string;
   id: string;
   name: string;
   createdAt: string;

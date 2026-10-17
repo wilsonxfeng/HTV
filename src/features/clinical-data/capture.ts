@@ -16,7 +16,11 @@ export class SessionVideoCapture {
     this.recorder = recorder;
     const chunks: BlobPart[] = [];
     const startCallMs = performance.now();
+    const width = preview.videoWidth, height = preview.videoHeight;
     let endMs = startCallMs;
+    let ended = false;
+    let pausedAt: number | null = null, pausedMs = 0;
+    const elapsed = (now = performance.now()) => (ended ? endMs : pausedAt ?? now) - originMs - pausedMs;
     this.stopped = new Promise((resolve, reject) => {
       recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
       recorder.onerror = () => reject(Error('Video recording failed. Landmark data is still available locally.'));
@@ -24,13 +28,16 @@ export class SessionVideoCapture {
         if (endMs === startCallMs) endMs = performance.now();
         const video = new Blob(chunks, { type: recorder.mimeType || mime || 'video/webm' });
         if (!video.size) { reject(Error('The camera produced an empty video.')); return; }
-        resolve({ video, originMs, startedAt, metadata: { mimeType: video.type, sizeBytes: video.size, width: preview.videoWidth, height: preview.videoHeight, durationMs: endMs - startCallMs, landmarkOffsetMs: originMs - startCallMs, mirrored: false } });
+        resolve({ video, originMs, startedAt, metadata: { mimeType: video.type, sizeBytes: video.size, width, height, durationMs: endMs - startCallMs - pausedMs, landmarkOffsetMs: originMs - startCallMs, mirrored: false } });
       };
     });
     // Attach a handler immediately, including before finish() is called after a device failure.
     void this.stopped.catch(() => {});
     recorder.start(250);
-    return { originMs, startedAt, stop: () => { endMs = performance.now(); if (recorder.state !== 'inactive') recorder.stop(); } };
+    return { originMs, startedAt, elapsed,
+      pause: () => { if (recorder.state === 'recording') { pausedAt = performance.now(); recorder.pause(); } },
+      resume: () => { if (recorder.state === 'paused' && pausedAt !== null) { pausedMs += performance.now() - pausedAt; pausedAt = null; recorder.resume(); } },
+      stop: () => { if (recorder.state === 'inactive') return; endMs = performance.now(); if (pausedAt !== null) { pausedMs += endMs - pausedAt; pausedAt = null; } ended = true; recorder.stop(); } };
   }
   async finish(): Promise<CapturedVideo> {
     if (!this.stopped) throw Error('No video recording was started.');

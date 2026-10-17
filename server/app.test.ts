@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
@@ -11,7 +11,9 @@ import { issueToken } from './auth';
 import type { Config } from './config';
 import type { CreateSession, SessionDetail } from '../src/features/clinical-data/contracts';
 import { createDemoSession } from '../src/lib/demo';
-import { motionSchema } from './validation';
+import { motionSchema, createSchema } from './validation';
+import { bodySessionMetadata, toEchoSession } from '../src/features/clinical-data/echoAdapter';
+import type { BodyRecording } from '../src/features/body-tracking/bodyRecordingStore';
 
 const db = localDatabase();
 let directory: string, app: Awaited<ReturnType<typeof buildApi>>, repository: ClinicalRepository;
@@ -47,6 +49,25 @@ beforeAll(async () => {
 afterAll(async () => { await app?.close(); await db.close(); if (directory) await rm(directory, { recursive: true, force: true }); });
 
 describe('authenticated upload pipeline against PostgreSQL', () => {
+  it('round-trips real-video-derived pose frames and body metrics separately from hand frames', async()=>{
+    const prepared=JSON.parse(await readFile(new URL('../public/demo recordings/body-prepared/manifest.json',import.meta.url),'utf8')) as {recordings:BodyRecording[]};
+    const source=prepared.recordings[0],motion=motionSchema.parse({...source.motion,id:randomUUID()});
+    const video={...source.metadata,mimeType:'video/webm',sizeBytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
+    const metadata=bodySessionMetadata(motion,video,patientId,false);
+    expect(createSchema.safeParse(metadata).success).toBe(true);
+    expect((await upload(metadata)).statusCode).toBe(204);
+    const completed=await app.inject({method:'POST',url:`/api/sessions/${motion.id}/complete`,headers:headers(patientToken),payload:{motion}});
+    expect(completed.statusCode,completed.body).toBe(200);
+    const detail=(await app.inject({url:`/api/sessions/${motion.id}`,headers:headers(clinicianToken)})).json<SessionDetail>();
+    expect(detail.motion.frames).toEqual(motion.frames);expect(detail.motion.trackingMode).toBe('pose');expect(detail.motion.calibration.imageNeutral).toHaveLength(33);
+    expect(detail.metrics?.pairs).toEqual([]);expect(detail.metrics?.body?.primaryValue).toBeGreaterThan(120);expect(detail.repetitions).toHaveLength(1);
+    const count=await db.query<{n:number}>('SELECT count(*)::integer AS n FROM pose_frames WHERE session_id=$1',[motion.id]);expect(count.rows[0].n).toBe(motion.frames.length);
+    expect((await db.query<{n:number}>('SELECT count(*)::integer AS n FROM hand_frames WHERE session_id=$1',[motion.id])).rows[0].n).toBe(0);
+    const progress=await repository.progress(patientId);expect(progress.find(p=>p.id===motion.id)?.angle).toBe(detail.metrics?.body?.primaryValue);
+    const echo=toEchoSession(detail,new Blob([bytes]));expect(echo.trackingMode).toBe('pose');expect(echo.frames[0].image).toHaveLength(33);expect(echo.repetitions).toEqual(detail.repetitions);
+    const invalid=structuredClone(motion);Object.assign(invalid.frames[0].imageLandmarks![28],{visibility:.1});expect(motionSchema.safeParse(invalid).success).toBe(false);
+    expect(createSchema.safeParse({...metadata,bodyRegion:'hand'}).success).toBe(false);
+  });
   it('restricts cloud preview access to a synthetic fictional patient and clinician role', async () => {
     const previewId=randomUUID();
     await db.query('INSERT INTO patients (id,display_name,demonstration) VALUES ($1,$2,true)',[previewId,'Fictional preview']);

@@ -13,6 +13,12 @@ export interface VideoMetadata {
   mirrored: boolean;
 }
 export interface CreateSession {
+  bodyRegion?: MotionSession['bodyRegion'];
+  trackingMode?: MotionSession['trackingMode'];
+  cameraView?: MotionSession['cameraView'];
+  targetSide?: MotionSession['targetSide'];
+  analysisVersion?: string;
+  segmentationCacheVersion?: string;
   id: string;
   patientId: string;
   exerciseId: string;
@@ -49,6 +55,9 @@ export interface PatientOverview extends Patient {
   adherence: { attended: number; scheduled: number; percent: number | null };
 }
 export interface ProgressPoint {
+  trackingMode?: MotionSession['trackingMode'];
+  cameraView?: MotionSession['cameraView'];
+  analysisVersion?: string;
   id: string;
   startedAt: string;
   hand: HandSide;

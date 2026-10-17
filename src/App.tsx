@@ -4,7 +4,8 @@ import { useApp } from './lib/store';
 import type { Page } from './lib/store';
 import { createDemoSession } from './lib/demo';
 import Garden, { GardenScene, WeekCalendar } from './components/Garden';
-const ExerciseFlow=lazy(()=>import('./components/ExerciseFlow'));
+const ExerciseFlow=lazy(()=>import('./features/body-exercises/Practice'));
+const BodySessionReview=lazy(()=>import('./features/body-exercises/BodySessionReview'));
 const Studio=lazy(()=>import('./components/Studio'));
 const Progress=lazy(()=>import('./components/Progress'));
 const ClinicianDashboard=lazy(()=>import('./features/clinician/ClinicianDashboard'));
@@ -23,7 +24,7 @@ export default function App(){
  <div className="home-practice"><section className="today-card"><div className="today-label"><span className="icon-tile"><Hand size={24}/></span><h2>Practice</h2><span className="small-flower"><Flower2 size={26}/></span></div><button className="btn btn-primary full" onClick={()=>navigate('exercise')}>Choose exercise<ArrowRight size={20}/></button></section><WeekCalendar sessions={sessions}/></div></div>
  <section className="home-bottom"><button className="sample-card" onClick={sample}><span className="icon-tile"><Play size={24}/></span><div><h2>Explore 3D sample</h2></div><ArrowRight size={22}/></button></section></div>}
  {page==='exercise'&&<ExerciseFlow onBack={()=>navigate('home')} onComplete={s=>{openSession(s);void save(s)}}/>}
- {page==='studio'&&session&&<Studio session={session}/>}
+ {page==='studio'&&session&&(session.trackingMode==='pose'?<BodySessionReview session={session}/>:<Studio session={session}/>)}
  {page==='garden'&&<Garden/>}
  {(page==='progress'||page==='history')&&<Progress/>}
  {page==='clinician'&&<ClinicianDashboard onBack={()=>navigate('home')}/>}
