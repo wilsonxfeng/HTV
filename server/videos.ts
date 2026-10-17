@@ -65,8 +65,10 @@ export class S3VideoStore implements VideoStore {
     this.client = new S3Client({ region: config.region, endpoint: config.endpoint, forcePathStyle: Boolean(config.endpoint), credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey }, requestChecksumCalculation: 'WHEN_REQUIRED', responseChecksumValidation: 'WHEN_REQUIRED' });
   }
   async upload(key: string, video: VideoMetadata) {
-    const command = new PutObjectCommand({ Bucket: this.config.bucket, Key: key, ContentType: video.mimeType, ContentLength: video.sizeBytes, Metadata: { sha256: video.sha256 } });
-    return { url: await getSignedUrl(this.client, command, { expiresIn: 300, signableHeaders: new Set(['content-type', 'content-length']), unhoistableHeaders: new Set(['x-amz-meta-sha256']) }), headers: { 'Content-Type': video.mimeType, 'x-amz-meta-sha256': video.sha256 }, expiresAt: new Date(Date.now() + 300000).toISOString() };
+    const command = new PutObjectCommand({ Bucket: this.config.bucket, Key: key, ContentType: video.mimeType, ContentLength: video.sizeBytes });
+    // The expected checksum lives in the database and is verified against actual bytes.
+    // Avoid redundant client metadata headers that require extra bucket CORS permissions.
+    return { url: await getSignedUrl(this.client, command, { expiresIn: 300, signableHeaders: new Set(['content-type', 'content-length']) }), headers: { 'Content-Type': video.mimeType }, expiresAt: new Date(Date.now() + 300000).toISOString() };
   }
   async playback(key: string) {
     return { url: await getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.config.bucket, Key: key }), { expiresIn: 300 }), headers: {}, expiresAt: new Date(Date.now() + 300000).toISOString() };
@@ -75,7 +77,7 @@ export class S3VideoStore implements VideoStore {
     try {
       const source = { Bucket: this.config.bucket, Key: stagingKey };
       const head = await this.client.send(new HeadObjectCommand(source));
-      if (head.ContentLength !== video.sizeBytes || head.ContentType !== video.mimeType || head.Metadata?.sha256 !== video.sha256 || !head.ETag) throw Error('metadata mismatch');
+      if (head.ContentLength !== video.sizeBytes || head.ContentType !== video.mimeType || !head.ETag) throw Error('metadata mismatch');
       // Verify the actual bytes, not just client-supplied metadata. No camera content goes to Gemini.
       const object = await this.client.send(new GetObjectCommand({ ...source, IfMatch: head.ETag }));
       const hash = createHash('sha256');

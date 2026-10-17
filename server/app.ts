@@ -36,9 +36,15 @@ export async function buildApi(config: Config, repository: ClinicalRepository, r
     await repository.db.query('SELECT 1');
     return { status: 'ok', mode: config.demo ? 'local-demo' : 'cloud', database: config.databaseUrl ? 'tigerdata' : 'embedded-postgresql', videoStorage: repository.videos.kind, aiConfigured: Boolean(reports) };
   });
-  if (config.demo) app.post('/api/demo-access', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async request => {
+  if (config.demo || config.localDemoPatientId) app.post('/api/demo-access', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async request => {
     const { role } = z.object({ role: z.enum(['patient', 'clinician']) }).parse(request.body);
-    return { token: await issueToken(config.secret, { sub: `local-demo-${role}`, role, patientIds: [DEMO_PATIENT_ID] }), patientId: DEMO_PATIENT_ID, demonstration: true };
+    const patientId = config.demo ? DEMO_PATIENT_ID : config.localDemoPatientId!;
+    if (!config.demo) {
+      if (role !== 'clinician') throw new HttpError(403, 'The cloud fixture preview provides clinician access only.');
+      const fixture = await repository.db.query(`SELECT id FROM patients WHERE id=$1 AND demonstration=true AND NOT EXISTS (SELECT 1 FROM sessions WHERE patient_id=$1 AND metadata->>'videoKind' IS DISTINCT FROM 'synthetic')`, [patientId]);
+      if (!fixture.rows.length) throw new HttpError(403, 'Demo access requires a fictional patient containing only synthetic fixtures.');
+    }
+    return { token: await issueToken(config.secret, { sub: `local-demo-${role}`, role, patientIds: [patientId] }), patientId, demonstration: true };
   });
   app.get('/api/patients', async request => {
     const user = await principal(request.headers.authorization);

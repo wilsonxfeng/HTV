@@ -10,7 +10,7 @@ import { DEMO_PATIENT_ID } from './auth';
 
 const config = await loadConfig();
 await mkdir(config.dataDirectory, { recursive: true, mode: 0o700 });
-const db = config.databaseUrl ? postgresDatabase(config.databaseUrl) : localDatabase(resolve(config.dataDirectory, 'postgres'));
+const db = config.databaseUrl ? postgresDatabase(config.databaseUrl, config.databaseTlsMode) : localDatabase(resolve(config.dataDirectory, 'postgres'));
 await migrate(db, Boolean(config.databaseUrl));
 if (config.demo) await db.query(`INSERT INTO patients (id,display_name,demonstration,schedule) VALUES ($1,'Alex Morgan · Fictional demo',true,$2::jsonb) ON CONFLICT (id) DO NOTHING`, [DEMO_PATIENT_ID, JSON.stringify({ weekdays: [1, 3, 5], timeZone: 'America/Toronto' })]);
 const videos = config.s3 ? new S3VideoStore(config.s3) : new LocalVideoStore(resolve(config.dataDirectory, 'videos'), config.secret, config.publicUrl);

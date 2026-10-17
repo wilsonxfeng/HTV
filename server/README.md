@@ -19,7 +19,11 @@ For subsequent runs use `npm run api:demo`. Do not start two API processes again
 
 Copy `.env.server.example` to `.env.server` and configure the connection URL, bucket credentials, a random `AUTH_SECRET` of at least 32 characters, and optionally Gemini. Generate a secret locally with `openssl rand -hex 48`. Never put these values in a `VITE_` variable, browser code, screenshots, Git, or a chat message.
 
-`npm run api:dev` requires cloud database and object-storage configuration; it never silently falls back to local storage. PostgreSQL TLS certificate verification is enforced. Startup applies the repeatable schema migration and the TimescaleDB hypertable migration. The configured TigerData role must be allowed to create/use the TimescaleDB extension and convert `hand_frames` to a hypertable. An existing hypertable is retained. In a deployed setup, run migrations as a dedicated migration role before starting application replicas.
+The server also loads `server/.env`. Existing process settings take priority, followed by `.env.server`, then `server/.env`; the root frontend `.env.local` is not a server configuration source. All credential files are ignored by Git and denied by Vite. For a database using a private certificate authority, set `DATABASE_CA_FILE` to the trusted CA certificate downloaded from TigerData (or provide `sslrootcert` in the connection URL). Hostname and certificate verification stay enabled; do not trust a certificate merely because an unverified connection presented it.
+
+`npm run api:dev` requires cloud database and object-storage configuration; it never silently falls back to local storage. PostgreSQL TLS certificate and hostname verification are enabled by default. TigerData services can initially use self-signed certificates, and free services do not receive public CA certificates ([provider documentation](https://www.tigerdata.com/docs/deploy/tiger-cloud/tiger-cloud-aws/security/strict-ssl)). For a local prototype using the provider's `sslmode=require` connection, explicitly set `DATABASE_TLS_MODE=require`: this requires encryption but does not authenticate the server certificate. The override is rejected with `NODE_ENV=production` or a non-loopback API host. Use a trusted CA or a publicly signed database certificate with `verify-full` before deployment. A configured `DATABASE_CA_FILE` always selects full verification.
+
+Startup applies the repeatable schema migration and the TimescaleDB hypertable migration. The configured TigerData role must be allowed to create/use the TimescaleDB extension and convert `hand_frames` to a hypertable. An existing hypertable is retained. In a deployed setup, run migrations as a dedicated migration role before starting application replicas.
 
 The bucket must remain private. Configure its CORS policy using `server/r2-cors.json`, replacing the development origin with your HTTPS application origin. Also set `APP_ORIGIN`, `API_PUBLIC_URL`, and `VITE_API_BASE_URL` for that deployment. The API defaults to `127.0.0.1`; set `API_HOST` deliberately when deploying behind an HTTPS reverse proxy. Demo access is unavailable outside explicit nonproduction loopback mode.
 
@@ -30,6 +34,8 @@ npm run api:provision -- 'Consenting demo participant' clinician-demo '1,3,5' Am
 ```
 
 The command prints scoped eight-hour bearer tokens. Deliver each token only to its intended demo user. Tokens are entered in the app and kept in tab session storage, never embedded in the client build. `npm run api:token -- clinician SUBJECT PATIENT_UUID` reissues access for an existing assignment. This is demo access provisioning, not an account system: there is no login, account recovery, immediate token revocation, audit trail, or production clinician identity verification. Do not expose the demo as a secure medical portal.
+
+For a local cloud-backed fixture preview, `LOCAL_DEMO_PATIENT_ID` enables the dashboard's **Use local demo** button for that one fictional patient. It issues clinician access only, rejects patients containing camera recordings, and is disabled in production or on a non-loopback API host. This opt-in preview uses the configured TigerData/R2 services; it does not enable patient uploads or provision access to real participants.
 
 ## Patient recording
 
@@ -60,6 +66,10 @@ npm run build:echoes
 ```
 
 API integration tests use actual embedded PostgreSQL, including transactions, joins, constraints, frame inserts and progress queries. They cover access denial, checksums, missing video, idempotent completion, clock mismatch, playback ranges and AI outage. They do not establish a real TigerData connection, execute its Timescale extension, upload to a real R2/S3 bucket, or invoke Gemini. Those live checks require your configured credentials. Browser checks should also cover consented hand capture on the actual device, encoding/microphone permissions, replay seek alignment, and a second device using the deployed API.
+
+Live verification on 2026-10-17 used the configured TigerData, private R2 bucket, and Gemini 3.8 Flash. Two labeled synthetic videos completed signed uploads, byte-level checksum verification, finalized-object playback/range requests, browser CORS preflight, idempotent completion, and Timescale frame/metric storage (216 frames and three detected cycles each). A same-length corrupted upload was rejected before completion. Gemini generated a schema-validated summary saved with its model version. The two fictional fixtures remain for local dashboard review; temporary staging objects and failed test runs were removed. This verifies the cloud pipeline with authored data, not actual patient capture or clinical accuracy.
+
+The browser dashboard loaded those cloud records through the running API, replayed their R2 video, displayed the saved Gemini summary, and prepared the two recordings in Movement Echoes (32/32 reliable outline samples). The summary request uses Gemini's supported low thinking level and a larger output budget after live testing found the previous limit could truncate structured JSON ([thinking/output token documentation](https://ai.google.dev/gemini-api/docs/thinking)).
 
 ## API
 

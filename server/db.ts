@@ -8,9 +8,10 @@ export interface Database {
   close(): Promise<void>;
 }
 
-export function postgresDatabase(connectionString: string): Database {
+export function postgresDatabase(connectionString: string, tlsMode: 'verify-full' | 'require' = 'verify-full'): Database {
   const verifiedUrl = new URL(connectionString);
-  verifiedUrl.searchParams.set('sslmode', 'verify-full');
+  verifiedUrl.searchParams.set('sslmode', tlsMode);
+  verifiedUrl.searchParams.set('uselibpqcompat', 'true');
   const pool = new Pool({ connectionString: verifiedUrl.toString(), max: 8, connectionTimeoutMillis: 10000, statement_timeout: 30000 });
   return {
     async query<T>(sql: string, values?: unknown[]) { return { rows: (await pool.query(sql, values)).rows as T[] }; },

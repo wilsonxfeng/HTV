@@ -11,7 +11,7 @@ if (!displayName || !clinicianSubject) throw Error('Usage: npm run api:provision
 const name = z.string().min(1).max(100).parse(displayName);
 new Intl.DateTimeFormat('en', { timeZone }).format();
 const weekdays = weekdayText ? z.array(z.number().int().min(0).max(6)).min(1).max(7).parse(weekdayText.split(',').map(Number)) : null;
-const db = postgresDatabase(config.databaseUrl);
+const db = postgresDatabase(config.databaseUrl, config.databaseTlsMode);
 try {
   await migrate(db, true);
   const id = randomUUID();

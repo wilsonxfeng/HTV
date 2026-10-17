@@ -2,7 +2,7 @@
   {
     "AllowedOrigins": ["http://localhost:5173"],
     "AllowedMethods": ["GET", "PUT", "HEAD"],
-    "AllowedHeaders": ["Content-Type", "x-amz-meta-sha256", "Range"],
+    "AllowedHeaders": ["Content-Type", "Range"],
     "ExposeHeaders": ["ETag", "Content-Range", "Accept-Ranges"],
     "MaxAgeSeconds": 300
   }

@@ -47,6 +47,23 @@ beforeAll(async () => {
 afterAll(async () => { await app?.close(); await db.close(); if (directory) await rm(directory, { recursive: true, force: true }); });
 
 describe('authenticated upload pipeline against PostgreSQL', () => {
+  it('restricts cloud preview access to a synthetic fictional patient and clinician role', async () => {
+    const previewId=randomUUID();
+    await db.query('INSERT INTO patients (id,display_name,demonstration) VALUES ($1,$2,true)',[previewId,'Fictional preview']);
+    const preview=await buildApi({ demo:false,secret,origin:'http://localhost:5173',localDemoPatientId:previewId } as Config,repository);
+    try {
+      const access=await preview.inject({method:'POST',url:'/api/demo-access',payload:{role:'clinician'}});
+      expect(access.statusCode).toBe(200);
+      const list=await preview.inject({url:'/api/patients',headers:headers(access.json().token)});
+      expect(list.json().map((p:{id:string})=>p.id)).toEqual([previewId]);
+      expect((await preview.inject({method:'POST',url:'/api/demo-access',payload:{role:'patient'}})).statusCode).toBe(403);
+      await db.query('UPDATE patients SET demonstration=false WHERE id=$1',[previewId]);
+      expect((await preview.inject({method:'POST',url:'/api/demo-access',payload:{role:'clinician'}})).statusCode).toBe(403);
+      await db.query('UPDATE patients SET demonstration=true WHERE id=$1',[previewId]);
+      await repository.create({...fixture().metadata,patientId:previewId,demonstration:true});
+      expect((await preview.inject({method:'POST',url:'/api/demo-access',payload:{role:'clinician'}})).statusCode).toBe(403);
+    } finally {await preview.close();}
+  });
   it('denies missing, forged, cross-patient and clinician-write access', async () => {
     expect((await app.inject('/api/patients')).statusCode).toBe(401);
     expect((await app.inject({ url: '/api/patients', headers: headers('forged') })).statusCode).toBe(401);

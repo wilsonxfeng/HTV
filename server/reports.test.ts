@@ -4,7 +4,7 @@ import { createDemoSession } from '../src/lib/demo';
 import { GeminiReports } from './reports';
 import type { SessionDetail } from '../src/features/clinical-data/contracts';
 const mock = vi.hoisted(() => ({ generate: vi.fn() }));
-vi.mock('@google/genai', () => ({ GoogleGenAI: class { models = { generateContent: mock.generate }; } }));
+vi.mock('@google/genai', () => ({ GoogleGenAI: class { models = { generateContent: mock.generate }; }, ThinkingLevel: { LOW: 'LOW' } }));
 function recording(): SessionDetail {
   const motion = createDemoSession();
   return { id: motion.id, patientId: 'never-send-patient-id', startedAt: motion.createdAt, exerciseId: 'finger-spread-close', hand: motion.hand, demonstration: true, videoKind: 'synthetic', video: { mimeType:'video/mp4',sizeBytes:1,sha256:'a'.repeat(64),width:640,height:480,durationMs:24000,landmarkOffsetMs:0,mirrored:false }, status:'complete',metrics:analyzeSession(motion),motion,repetitions:[],report:null };
