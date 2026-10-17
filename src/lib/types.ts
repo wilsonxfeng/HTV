@@ -11,7 +11,7 @@ export interface Calibration {
   exemplarName?: string;
   exemplarFrames?: number;
 }
-export interface MotionSession { id: string; createdAt: string; hand: HandSide; duration: number; cycleDuration: number; frames: HandFrame[]; calibration: Calibration; source: 'camera' | 'demo'; completed?: boolean }
+export interface MotionSession { id: string; exerciseId?: string; createdAt: string; hand: HandSide; duration: number; cycleDuration: number; frames: HandFrame[]; calibration: Calibration; source: 'camera' | 'demo'; completed?: boolean }
 export interface PairMetric { pair: string; indices: [number, number]; neutral: number; target: number; achieved: number; attainment: number | null }
 export interface Deviation { id: string; t: number; repetition: number; pair: string; indices: [number, number]; difference: number; actual: number; target: number; message: string }
 export interface SessionAnalysis { pairs: PairMetric[]; deviations: Deviation[]; targetAttainment: number | null; trackingQuality: number; validFrames: number; repetitions: number }

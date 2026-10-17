@@ -18,7 +18,7 @@ npm run build
 npm run preview
 ```
 
-The production preview is normally http://localhost:4173. Deploy `dist/` to any static HTTPS host. Camera access requires localhost or HTTPS. The camera and movement features need no backend or API key. Optional voice coaching connects to the configured ElevenLabs agent.
+The production preview is normally http://localhost:4173. Deploy `dist/` to any static HTTPS host. Camera access requires localhost or HTTPS. The camera and movement features need no backend or API key. Voice-led practice connects to the configured ElevenLabs agent.
 
 ```sh
 npm test
@@ -27,11 +27,12 @@ npm test
 ## Try it
 
 - **Explore a sample** opens a clearly labeled, synthetic 24-second session without camera permissions. Orbit the 3D hand, switch layers, scrub the timeline, select amber differences, change replay speed, or inspect the spread graph.
-- **Begin Exercise** opens webcam preparation. Enable the camera and explicitly confirm your physical left/right hand. Keep one whole hand visible, palm forward, fingers relatively straight.
-- Capture a stable neutral pose, then a comfortable spread. Capture takes at least 1.2 seconds of stable, continuously tracked observations. Retry if tracking is interrupted.
-- After neutral capture, you can choose a local MP4/MOV of a well-performed exercise. The browser samples it with the same local MediaPipe model, keeps only clear one-hand frames, and derives an exemplar neutral and widest-spread target from the lower and upper spread bands. The video is not stored or uploaded; only the aggregate landmarks and filename are kept. This is a reference exemplar, not a universal normal hand or clinical ground truth.
-- If you cannot voluntarily spread your fingers, a clinician-provided target is needed. After measuring your real neutral pose, the clinician-target form accepts the three adjacent non-thumb finger-axis angles. No default target is invented.
-- Choose a 6-, 8-, or 10-second cycle; follow three guided repetitions. Recording can be stopped early. Tracking gaps remain gaps; partial sessions may not have enough hold data for metrics.
+- **Practice** opens an exercise menu. Finger Spread & Close is the only available exercise. Definitions in `src/lib/exercises.ts` supply each listed exercise’s name, instructions, pace, repetitions, phase model, and target validation. New movement types also need corresponding analysis/replay support before release.
+- **Start lesson** connects ElevenLabs, then opens the camera. The coach asks for your physical “left hand” or “right hand”; the model’s predicted hand never substitutes for that confirmation.
+- Say **ready** to capture a stable neutral pose, then again at a comfortable spread. Captures require 1.2 seconds of continuously tracked, stable observations. Say **begin** after calibration to start the countdown and three repetitions.
+- Say **6 seconds**, **8 seconds**, or **10 seconds** to choose your pace before practice. Say **stop** or **pause**, or use the visible Stop control, to end practice with its actual partial data. A voice disconnection also stops the camera and recording.
+- After neutral capture, ask for **reference video** to reveal a local file picker in the coach panel. The browser derives an exemplar target from the clip; it is not a clinical standard. For prescribed adjacent finger-axis targets, reply **target angles 10 12 8**, replacing those numbers with clinician-provided degrees for index–middle, middle–ring, and ring–pinky. No default clinical target is invented.
+- Captions and a typed-reply field provide access to the same coach-driven flow. Replies are deliberately explicit: ambiguous answers or “not ready” never advance a step. Say **retry camera** to reconnect or repeat, **recalibrate** to reset your hand/reference, and **see my movement** to open an eligible recording.
 - **Analyze My Movement** opens the actual recording and saves its landmark data locally. The journal supports replay, export, deletion, and two-session comparisons. Samples remain labeled and only save when explicitly requested.
 
 ## Measurement model
@@ -54,7 +55,7 @@ A browser test on a known hand image verifies that the installed detector return
 
 The model and WASM assets are served locally. No webcam video or still images are stored or uploaded. IndexedDB (`remotion-local`) stores landmark coordinates, hand selection, calibration, timing, and session metadata on this browser/device. JSON exports contain the same information. Browser-data clearing removes saved sessions. Storage errors leave the session available for export.
 
-The 7.5 MB hand-landmarker model is included at `public/models/hand_landmarker.task`. `npm install` copies the matching package WASM files into `public/mediapipe/`. The project-local npm cache avoids permission problems with an existing user-level cache and is ignored by Git. Garden art, camera models and WASM have no runtime CDN dependencies. Optional voice coaching uses the ElevenLabs service only after the user starts it.
+The 7.5 MB hand-landmarker model is included at `public/models/hand_landmarker.task`. `npm install` copies the matching package WASM files into `public/mediapipe/`. The project-local npm cache avoids permission problems with an existing user-level cache and is ignored by Git. Garden art, camera models and WASM have no runtime CDN dependencies. Voice lessons use the ElevenLabs service only after the user starts a lesson.
 
 ## Stack and structure
 
@@ -70,7 +71,7 @@ WebGL 2 is needed for 3D. A labeled 2D fallback preserves playback and measureme
 
 ## Validation and limits
 
-The strict production build and 26 tests pass. Tests cover rigid-transform and scale invariance, depth preservation, pair angles, personalized and clinician targets, replay gaps, insufficient data, hold coverage, overshoot, synthetic session evaluation, daily garden rewards, and reference-video extraction/cancellation. Browser checks cover real MediaPipe model initialization/inference, 3D rendering, replay, layer controls, local persistence and responsive layout. No automated test validates neurological recovery, clinical accuracy, or a person's real webcam exercise. A complete live-hand session must still be checked with a person and webcam before a live demo.
+The strict production build and automated tests cover the implementation. Tests cover rigid-transform and scale invariance, depth preservation, pair angles, personalized and clinician targets, replay gaps, insufficient data, hold coverage, overshoot, synthetic session evaluation, daily garden rewards, and reference-video extraction/cancellation. Browser checks cover real MediaPipe model initialization/inference, 3D rendering, replay, layer controls, local persistence and responsive layout. No automated test validates neurological recovery, clinical accuracy, or a person's real webcam exercise. A complete live-hand session must still be checked with a person and webcam before a live demo.
 
 ## Exercise context and assets
 
@@ -94,10 +95,14 @@ Reference-video import from the upstream coaching update is available while sett
 
 See `ASSET_CREDITS.md` for generated artwork provenance and reviewed third-party alternatives.
 
-## Optional voice coach
+## Voice-led lessons
 
-Practice includes an optional, user-started ElevenLabs voice coach. The public default agent is `agent_7501m54dgcmbevh8z9ma1ft00khx`; override it with `VITE_ELEVENLABS_AGENT_ID`. No secret API key belongs in a Vite environment variable. If the agent requires authentication, a server-issued conversation token is needed; this client-only prototype is configured for a public agent.
+Practice uses a user-started ElevenLabs voice coach as its main lesson interface. The public default agent is `agent_7501m54dgcmbevh8z9ma1ft00khx`; override it with `VITE_ELEVENLABS_AGENT_ID`. No secret API key belongs in a Vite environment variable. A private agent requires a server-issued conversation token; this prototype uses a public agent.
 
-The coach requests microphone access only when started. Microphone audio and the current exercise step are shared with ElevenLabs; camera frames, landmark arrays and saved history are not sent. Mute, stop, connection error recovery and visible coach captions are provided. Leaving Practice ends the voice session through the SDK provider cleanup. Speech does not control calibration, recording or repetitions. The coach supplies spoken support while the existing guided exercise controls recording, evaluation and garden rewards. It does not record camera video or replace the exercise timing model.
+Microphone audio and compact lesson context are shared with ElevenLabs. Camera frames, landmark arrays, and history stay local. Leaving Practice ends the conversation through SDK cleanup. Voice disconnects stop captures/countdowns and preserve an active recording as a partial session.
 
-SDK documentation: https://elevenlabs.io/docs/eleven-agents/libraries/react
+The app supplies lesson cues to the agent and handles explicit user transcripts using `src/lib/coachLesson.ts`. AI replies never execute actions. Guards require the connected coach, confirmed physical hand, fresh hand tracking, and real calibration before recording. The agent receives application results and must never claim an unconfirmed capture succeeded. This transcript bridge works with the existing public agent without requiring dashboard client-tool configuration. It is an explicit-command prototype, not unrestricted natural-language action planning.
+
+Unit and component tests cover reply parsing, negation/ambiguity, exercise definitions, measured calibration, spoken progression, countdown cancellation, and partial-session preservation when voice disconnects. A real person should still check speech recognition, end-to-end timing, and hand capture on their device.
+
+SDK documentation: [ElevenLabs React SDK](https://elevenlabs.io/docs/eleven-agents/libraries/react)

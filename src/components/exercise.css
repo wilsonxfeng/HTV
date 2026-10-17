@@ -9,3 +9,23 @@
 .ex-video-wrap{width:100%;min-width:0}.ex-camera-cover>*{max-width:100%}.ex-camera-cover p{overflow-wrap:anywhere}.ex-video-reference{background:#f3f2e3;border:1px solid var(--line);border-radius:16px;padding:16px;margin:20px 0}.ex-video-reference h3{font-size:20px}.ex-video-reference p{font-size:15px;margin:10px 0}.ex-video-reference .quiet{font-size:14px}.ex-target-review p{font-size:15px;margin-bottom:12px;overflow-wrap:anywhere}.ex-target-stage{height:260px;border-radius:16px;overflow:hidden;background:#edf1e5}.ex-target-review .hand-stage{min-height:0}
 
 .voice-coach-toggle{order:0;background:#edf2e6;border:1px solid #d3dfc7;border-radius:22px;overflow:hidden}.voice-coach-toggle>summary{padding:17px 20px}.voice-coach{padding:0 20px 20px}.voice-heading{display:flex;gap:12px;align-items:flex-start}.voice-heading h3{font-size:20px}.voice-heading p{font-size:15px;margin-top:5px}.voice-privacy{font-size:14px;line-height:1.6;margin:16px 0}.voice-controls{display:flex;gap:10px;flex-wrap:wrap}.voice-controls .btn{width:100%;font-size:16px}.voice-error{font-size:15px;background:#fae5df;color:#7b4038;padding:12px;border-radius:12px;margin-top:14px}.voice-caption{background:#fffdf5;padding:15px;border-radius:14px;margin-top:15px}.voice-caption>span{font-size:12px;letter-spacing:1px;font-weight:650}.voice-caption p{font-size:17px;margin-top:7px}
+
+/* The coach is the lesson surface, first in reading order on every screen. */
+.ex-heading .ex-exercise-label{display:block;font-size:14px;color:var(--muted);margin:6px 0 8px;font-weight:650}
+.ex-exercise-choice{width:100%;max-width:600px;min-height:56px;font-size:clamp(22px,3.2vw,34px)!important;font-weight:750;border:1px solid var(--line);border-radius:14px;padding:8px 38px 8px 14px;background:#fffdf6;color:var(--ink);text-overflow:ellipsis}
+.ex-heading>div{min-width:0;width:100%}.ex-heading p{margin-top:10px}
+.ex-exercise-choice:disabled{opacity:.8;cursor:default}
+.ex-sidebar .voice-coach{background:#edf2e6;border:1px solid #d3dfc7;border-radius:24px;padding:22px}
+.voice-heading h2{font-size:25px;line-height:1.25;margin:5px 0}.voice-heading .ex-eyebrow{font-size:11px;letter-spacing:1.1px}
+.voice-heading .icon-tile{flex-shrink:0}.voice-live{background:var(--forest);color:white}
+.voice-lesson-cue{font-size:18px;line-height:1.65;margin:20px 0;color:var(--ink)}
+.voice-consent{font-size:12px;line-height:1.6;color:var(--muted);margin:13px 0 0}
+.voice-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.voice-controls .btn{padding:12px 8px;min-height:48px;font-size:14px}
+.voice-caption{max-height:230px;overflow-y:auto}.voice-caption p{font-size:16px;line-height:1.65}
+.voice-reply{margin-top:18px}.voice-reply label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}
+.voice-reply>div{display:flex;gap:8px}.voice-reply input{min-width:0;width:100%;min-height:48px;border:1px solid var(--line);border-radius:12px;background:#fffdf6;padding:10px 12px;font-size:16px}
+.voice-reply button{display:grid;place-items:center;flex-shrink:0;width:48px;border-radius:12px;background:var(--forest);color:white}
+.voice-feedback{font-size:14px;line-height:1.5;margin-top:12px;color:var(--forest)}
+.ex-coach-attachment{padding:16px;border:1px solid var(--line);border-radius:16px;background:white}.ex-coach-attachment label{display:block;margin-bottom:10px}.ex-coach-attachment input{width:100%;min-width:0;font-size:14px}
+@media(min-width:760px){.ex-layout{grid-template-columns:minmax(300px,1fr) minmax(0,1.35fr)}.ex-camera-panel{position:sticky;top:20px}}
+@media(max-width:759px){.ex-camera-ready .ex-camera-panel{position:static}.ex-camera-ready .ex-video-wrap{max-height:none;min-height:270px}.ex-sidebar .voice-coach{padding:20px}.ex-page{padding-bottom:28px}.ex-steps{gap:10px}.voice-lesson-cue{font-size:17px}.ex-step{font-size:11px}}

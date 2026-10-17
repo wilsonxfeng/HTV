@@ -95,7 +95,7 @@ function StageFallback({ recorded, reference, preview, hand = 'Right', showRecor
       {showRecorded && actual && <FlatHand points={actual} />}
     </svg>
     <span className="hand-stage-fallback-label">2D motion preview</span>
-    <p>3D needs WebGL 2. Replay and measurements are still available.</p>
+    <p>3D unavailable. Showing 2D replay.</p>
   </div>;
 }
 
@@ -284,7 +284,7 @@ export default function HandStage(props: HandStageProps) {
   const fallback = <StageFallback {...props} />;
   return <div className={`hand-stage${props.preview ? ' hand-stage-preview' : ''}`}>
     <div className="hand-stage-atmosphere" />
-    {supported === false || contextLost ? fallback : supported === null ? <div className="hand-stage-loading">Preparing motion space<span /></div> :
+    {supported === false || contextLost ? fallback : supported === null ? <div className="hand-stage-loading">Loading replay…<span /></div> :
       <StageBoundary fallback={fallback}>
         <Canvas camera={{ position: [1.75, 2.05, 5.75], fov: 32, near: 0.1, far: 60 }} dpr={[1, 1.75]}
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}

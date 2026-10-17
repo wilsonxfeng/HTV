@@ -9,6 +9,12 @@
 
 /* Keep the primary exercise action in the first phone viewport. */
 h1,h2,h3{font-weight:650}.brand{font-weight:700}.today-label,.eyebrow,.garden-scene-caption{font-weight:650}
+.home-garden{position:relative}.home-garden-link{position:absolute;bottom:12px;right:12px;background:var(--cream);border:1px solid var(--line)}
+.home-layout{row-gap:20px}.home-practice{padding-top:18px}.home-bottom{display:block;margin-top:20px}.home-bottom .sample-card{width:100%}
+.today-label h2{font-size:24px;letter-spacing:-.5px}.history-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+.studio-finish{background:transparent;padding:0;margin-top:20px}.studio-finish p{margin:0}.voice-heading+.btn{margin-top:18px}
+.history-empty .btn{margin-top:20px}.voice-transcript{margin-top:16px;font-size:14px}.voice-transcript summary{padding-block:8px}.voice-transcript .voice-caption{margin-top:4px}
+@media(min-width:700px){.home-practice{padding-top:0}.home-bottom{max-width:560px}.studio-finish .btn{margin-left:auto}}
 @media(max-width:699px){.app-header{height:68px}.home-page{padding-top:10px}.home-welcome{margin-bottom:14px}.home-welcome h1{font-size:33px}.home-garden .garden-scene.compact{height:170px}.home-garden-caption{padding:13px 2px 18px}.today-card{padding:18px}.today-label{margin-bottom:10px}.today-card p{margin-bottom:10px}.practice-meta{margin-bottom:15px}.home-practice .week-card{padding-top:18px}}
 .garden-scene{background-image:url('/assets/garden/paper-texture.webp')}.garden-sun{display:none}.garden-ground-label{background:#fffbf3c9;border-radius:12px;left:16px;right:16px;bottom:10px;padding:5px}
 
