@@ -2,6 +2,7 @@ import type { MotionSession } from './types';
 export const STAGES = ['Seed', 'Sprout', 'Growing plant', 'Flower bud', 'Full bloom'];
 export const dayKey = (date: Date | string) => { const d = new Date(date); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 export function isCompletedPractice(s: MotionSession) {
+  if (s.trackingMode === 'pose') return s.source === 'camera' && s.completed === true && s.frames.filter(f => f.tracking && f.landmarks.length === 33).length >= 8;
   return s.source === 'camera' && s.completed !== false && s.duration >= s.cycleDuration * 3 - .2 && s.frames.filter(f => f.tracking && f.landmarks.length === 21).length >= 8;
 }
 export function gardenProgress(sessions: MotionSession[]) {

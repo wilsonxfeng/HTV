@@ -1,3 +1,4 @@
+import { getExercise } from '../body-exercises/exerciseRegistry';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Layers, RefreshCw, Trash2 } from 'lucide-react';
 import EchoViewer from './EchoViewer';
@@ -19,12 +20,20 @@ export interface MovementEchoesProps {
   onClose?: () => void;
   /** Delete matching host history only if that host explicitly linked a video. */
   onDeleted?: (id: string) => void | Promise<void>;
+  /** Authorized remote selection only: no browser recording merge or persistent image cache. */
+  providedOnly?: boolean;
+  /** Opt-in only for locally captured body video, never remote patient images. */
+  cacheLocally?: boolean;
+  backLabel?: string;
 }
 export default function MovementEchoes({
   sessions: provided = [],
   initialFocusedSessionId,
   onClose,
   onDeleted,
+  providedOnly = false,
+  cacheLocally = false,
+  backLabel,
 }: MovementEchoesProps) {
   const [sessions, setSessions] = useState<EchoSession[]>([]),
     [focusId, setFocusId] = useState(initialFocusedSessionId ?? ''),
@@ -54,8 +63,7 @@ export default function MovementEchoes({
   const providedRef = useRef(provided);
   useEffect(() => {
     let live = true;
-    void echoRepository
-      .list()
+    void (providedOnly ? Promise.resolve([] as EchoSession[]) : echoRepository.list())
       .then((saved) => {
         if (!live) return;
         const merged = [
@@ -101,7 +109,7 @@ export default function MovementEchoes({
         if (!session.repetitions.length) {
           setFailures((f) => ({
             ...f,
-            [session.id]: 'No usable tracked cycle or static hand pose.',
+            [session.id]: 'No usable tracked cycle. Use the original video and phase markers.',
           }));
           continue;
         }
@@ -114,6 +122,8 @@ export default function MovementEchoes({
               if (!controller.signal.aborted) setUpdate(u);
             },
             controller.signal,
+            false,
+            !providedOnly || cacheLocally,
           );
           if (!controller.signal.aborted)
             setCaches((c) => ({ ...c, [session.id]: cache }));
@@ -270,7 +280,8 @@ export default function MovementEchoes({
     setSideBySide(false);
     revealTimers.current.forEach(clearTimeout);
     setOverlay(true);
-    setLimit(5);
+    setLimit(focus?.trackingMode === 'pose' ? 3 : 5);
+    setOpacity(comparison.length > 1 ? .2 : .3);
     setEnabled({});
     setRevealed(0);
     setReveal((v) => v + 1);
@@ -287,6 +298,10 @@ export default function MovementEchoes({
   };
   const remove = async (id: string) => {
     try {
+      if (sessions.find(s => s.id === id)?.trackingMode === 'pose') {
+        const { bodyRecordingStore } = await import('../body-tracking/bodyRecordingStore');
+        await bodyRecordingStore.remove(id);
+      }
       await echoRepository.delete(id);
       await onDeleted?.(id);
       setSessions((s) => s.filter((v) => v.id !== id));
@@ -310,24 +325,20 @@ export default function MovementEchoes({
         {onClose && (
           <button className="echo-back" onClick={onClose}>
             <ArrowLeft size={20} />
-            Back to Progress
+            {backLabel ?? (providedOnly ? 'Back to dashboard' : 'Back to Progress')}
           </button>
         )}
         <div className="echo-title-row">
           <div>
-            <p className="echo-eyebrow">A CLOSER LOOK AT YOUR MOVEMENT</p>
             <h1>
               Movement Echoes<span>.</span>
             </h1>
-            <p className="echo-subtitle">A week of movement. One view.</p>
           </div>
           <span className="echo-title-icon">
             <Layers size={30} />
           </span>
         </div>
-        <p className="echo-local">
-          Local preview · Videos and hand imagery stay in this browser.
-        </p>
+        {!providedOnly&&<p className="echo-local">Local preview · Videos stay in this browser.</p>}
       </header>
       {error && (
         <p className="echo-error" role="alert">
@@ -385,9 +396,9 @@ export default function MovementEchoes({
       {focus && (
         <>
           <div className="echo-demo-banner">
-            {focus.demonstration
+            {providedOnly ? focus.demonstration ? 'Demo footage · Not a recovery history.' : cacheLocally ? 'Local recording' : 'Authorized patient recordings' : focus.demonstration
               ? 'Supplied demonstration footage · The filenames describe intended ranges, not measured progress. Physical left/right hand identity is unconfirmed.'
-              : 'Your local recording · Compare the same selected hand and recording orientation.'}
+              : 'Compare the same exercise, side and camera view.'}
           </div>
           <div className="echo-layout">
             <div className="echo-main">
@@ -403,7 +414,7 @@ export default function MovementEchoes({
                   onClick={overlayWeek}
                 >
                   <Layers size={20} />
-                  Overlay Week
+                  Overlay Sessions
                 </button>
               </div>
               <div className="echo-mode-row">
@@ -413,7 +424,7 @@ export default function MovementEchoes({
                   onClick={() => setSideBySide((v) => !v)}
                 >
                   {sideBySide
-                    ? 'Return to hand overlays'
+                    ? 'Return to overlays'
                     : 'Compare original videos side by side'}
                 </button>
               </div>
@@ -470,7 +481,7 @@ export default function MovementEchoes({
               <section className="echo-session-section">
                 <div className="echo-section-heading">
                   <h2>Choose a recording</h2>
-                  <span>Tap a hand or a chip</span>
+                  <span>Tap an outline or a date</span>
                 </div>
                 <div
                   className="echo-session-chips"
@@ -544,7 +555,7 @@ export default function MovementEchoes({
                     value={limit}
                     onChange={(e) => setLimit(Number(e.target.value))}
                   >
-                    {[1, 2, 3, 4, 5].map((n) => (
+                    {(focus.trackingMode === 'pose' ? [1, 2, 3] : [1, 2, 3, 4, 5]).map((n) => (
                       <option key={n} value={n}>
                         {n}
                       </option>
@@ -581,7 +592,7 @@ export default function MovementEchoes({
                             {s.name.replace('.mov', '')}
                             <small>
                               {!eligible
-                                ? 'Different hand, exercise or mirror orientation'
+                                ? 'Different side, exercise, viewpoint or analysis version'
                                 : failures[s.id]
                                   ? 'Outline unavailable'
                                   : s.repetitions[repChoices[s.id] ?? 0]?.static
@@ -595,14 +606,13 @@ export default function MovementEchoes({
                     })}
                 </div>
                 <p className="echo-note">
-                  Only the palm is aligned. Every finger keeps its recorded
-                  shape and position.
+                  {focus.trackingMode === 'pose' ? 'Aligned once to the seated baseline. Limb shapes and movement stay unchanged.' : 'Only the palm is aligned. Every finger keeps its recorded shape and position.'}
                 </p>
               </section>
               <section className="echo-metrics">
                 <p className="echo-eyebrow">RECORDED MOVEMENT</p>
                 <h2>
-                  {selectedRep ? `${selectedRep.peakSpread.toFixed(1)}°` : '—'}
+                  {getExercise(focus.exerciseId).experimental ? 'Video only' : selectedRep ? `${selectedRep.peakSpread.toFixed(1)}°` : '—'}
                   <span>
                     {selectedRep?.static
                       ? 'at the selected still pose'
@@ -610,10 +620,9 @@ export default function MovementEchoes({
                   </span>
                 </h2>
                 <p>
-                  Mean index–middle, middle–ring and ring–little finger-axis
-                  separation, estimated in 3D.
+                  {focus.trackingMode === 'pose' ? `${getExercise(focus.exerciseId).peakLabel} · Camera estimate` : 'Mean finger-axis separation, estimated in 3D.'}
                 </p>
-                {comparison[0] && selectedRep && (
+                {comparison[0] && selectedRep && !getExercise(focus.exerciseId).experimental && (
                   <p className="echo-difference">
                     {comparison[0].name.replace('.mov', '')}:{' '}
                     {comparison[0].repetitions[
@@ -641,7 +650,7 @@ export default function MovementEchoes({
           >
             <summary>Inspect extraction quality</summary>
             {inspecting && <QualityPreview cache={caches[focus.id]} />}
-            <label className="echo-range-label">
+            {focus.trackingMode !== 'pose' && <label className="echo-range-label">
               Color tolerance<span>{config.colorTolerance.toFixed(2)}×</span>
               <input
                 aria-label="Segmentation color tolerance"
@@ -657,11 +666,11 @@ export default function MovementEchoes({
                   }))
                 }
               />
-            </label>
+            </label>}
             <p className="echo-note">
-              Color is learned from this recording’s palm and fingers. A plain
+              {focus.trackingMode === 'pose' ? 'Masks come from the recorded person. Unreliable outlines are hidden.' : <>Color is learned from this recording’s palm and fingers. A plain
               backdrop works best. Higher tolerance can include background;
-              unreliable outlines are hidden.
+              unreliable outlines are hidden.</>}
             </p>
             {Object.entries(failures).map(([id, message]) => (
               <p key={id} className="echo-error">
@@ -683,7 +692,7 @@ export default function MovementEchoes({
               Rebuild local outlines
             </button>
           </details>
-          <details
+          {(!providedOnly||cacheLocally)&&<details
             className="echo-details"
             onToggle={(e) => setMarkers(e.currentTarget.open)}
           >
@@ -703,8 +712,8 @@ export default function MovementEchoes({
                 }}
               />
             )}
-          </details>
-          <div className="echo-delete">
+          </details>}
+          {!providedOnly&&<div className="echo-delete">
             {deleteId === focus.id ? (
               <>
                 <p>
@@ -733,10 +742,10 @@ export default function MovementEchoes({
                 Delete this local recording
               </button>
             )}
-          </div>
+          </div>}
         </>
       )}
-      <details
+      {!providedOnly&&<details
         className="echo-details"
         open={tools}
         onToggle={(e) => setTools(e.currentTarget.open)}
@@ -758,7 +767,7 @@ export default function MovementEchoes({
               Load remaining supplied demo clips
             </button>
           )}
-      </details>
+      </details>}
     </div>
   );
 }

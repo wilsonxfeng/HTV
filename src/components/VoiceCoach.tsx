@@ -6,6 +6,7 @@ import { VOICE_AGENT_ID } from '../lib/voice';
 type Props = {
   context: string;
   cue: string;
+  commands?: string;
   onReply: (reply: string) => string;
   onConnection: (connected: boolean) => void;
 };
@@ -20,7 +21,7 @@ export default function VoiceCoach(props: Props) {
   }}><CoachControls {...props} caption={caption} feedback={feedback} onFeedback={setFeedback}/></ConversationProvider>;
 }
 
-function CoachControls({ context, cue, onReply, onConnection, caption, feedback, onFeedback }: Props & { caption: string; feedback: string; onFeedback: (text: string) => void }) {
+function CoachControls({ context, cue, commands = 'left hand, right hand, ready, begin, stop, retry camera, reference video, recalibrate, see my movement, and 6/8/10 seconds', onReply, onConnection, caption, feedback, onFeedback }: Props & { caption: string; feedback: string; onFeedback: (text: string) => void }) {
   const { startSession, endSession, sendContextualUpdate, sendUserMessage } = useConversationControls();
   const { status, message } = useConversationStatus();
   const { isMuted, setMuted } = useConversationInput();
@@ -36,8 +37,8 @@ function CoachControls({ context, cue, onReply, onConnection, caption, feedback,
     if (!connected) lastCue.current = '';
   }, [connected]);
   useEffect(() => {
-    if (connected) sendContextualUpdate(`ReMotion app state: ${context}. The app validates captures and controls timing. You cannot see camera frames. Never claim a capture succeeded until the app reports it. Never diagnose or prescribe. User replies understood by the app: left hand, right hand, ready, begin, stop, retry camera, reference video, recalibrate, see my movement, and 6/8/10 seconds. Ask for those clear replies. Do not invent exercises or repetitions.`);
-  }, [connected, context, sendContextualUpdate]);
+    if (connected) sendContextualUpdate(`ReMotion app state: ${context}. The app validates captures and controls timing. You cannot see camera frames. Never claim a capture succeeded until the app reports it. Never diagnose or prescribe. User replies understood by the app: ${commands}. Ask for those clear replies. Do not invent exercises or repetitions.`);
+  }, [connected, context, commands, sendContextualUpdate]);
   useEffect(() => {
     if (connected && feedback) sendContextualUpdate(`App result for the user's reply: ${feedback}. Treat this as authoritative; do not claim a blocked action succeeded.`);
   }, [connected, feedback, sendContextualUpdate]);

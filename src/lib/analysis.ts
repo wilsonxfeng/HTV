@@ -1,3 +1,4 @@
+import { analyzeBodySession } from '../features/body-tracking/poseMetrics';
 import { FINGER_PAIRS, MAX_FRAME_GAP, pairAngles, validFrame } from './geometry';
 import type { Deviation, HandFrame, MotionSession, PairMetric, SessionAnalysis } from './types';
 
@@ -18,6 +19,7 @@ interface ObservedHold {
  * A hold needs >=50% observed temporal coverage before contributing measurements.
  */
 export function analyzeSession(session: MotionSession): SessionAnalysis {
+  if (session.trackingMode === 'pose') return analyzeBodySession(session);
   const result: SessionAnalysis = { pairs: [], deviations: [], targetAttainment: null, trackingQuality: 0, validFrames: 0, repetitions: 0 };
   const duration = Number.isFinite(session.duration) ? Math.max(0, session.duration) : 0;
   const cycle = Number.isFinite(session.cycleDuration) && session.cycleDuration > 0 ? session.cycleDuration : 8;

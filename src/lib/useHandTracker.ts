@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+import { createTrackingAdapter, type TrackingAdapter } from '../features/body-tracking/trackingAdapter';
 import { HAND_CONNECTIONS, normalizeHand, pairAngles } from './geometry';
 import type { HandFrame } from './types';
 
@@ -13,7 +13,7 @@ export function useHandTracker() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const detectorRef = useRef<HandLandmarker | null>(null);
+  const detectorRef = useRef<TrackingAdapter | null>(null);
   const requestRef = useRef(0);
   const generation = useRef(0);
   const expectedLabel = useRef<string | null>(null);
@@ -44,7 +44,7 @@ export function useHandTracker() {
     const run = generation.current;
     setStatus('loading'); setError(''); setSample(null); setFps(0);
     let openingStream: MediaStream | null = null;
-    let openingDetector: HandLandmarker | null = null;
+    let openingDetector: TrackingAdapter | null = null;
     try {
       if (!window.isSecureContext) throw new Error('Camera access needs localhost or an HTTPS connection. Open this app on localhost and try again.');
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('This browser does not support camera access. Try a current version of Chrome, Edge, or Safari.');
@@ -52,12 +52,7 @@ export function useHandTracker() {
       if (run !== generation.current) { openingStream.getTracks().forEach(track => track.stop()); return; }
       streamRef.current = openingStream;
       openingStream.getVideoTracks().forEach(track => { track.onended = () => { if (run === generation.current) { release(); setError('Camera connection ended. Reconnect your camera and retry.'); setStatus('error'); } }; });
-      const files = await FilesetResolver.forVisionTasks(`${import.meta.env.BASE_URL}mediapipe`);
-      openingDetector = await HandLandmarker.createFromOptions(files, {
-        baseOptions: { modelAssetPath: `${import.meta.env.BASE_URL}models/hand_landmarker.task`, delegate: 'CPU' },
-        runningMode: 'VIDEO', numHands: 2,
-        minHandDetectionConfidence: 0.6, minHandPresenceConfidence: 0.6, minTrackingConfidence: 0.6,
-      });
+      openingDetector = await createTrackingAdapter('hand');
       if (run !== generation.current) { openingDetector.close(); openingStream.getTracks().forEach(track => track.stop()); return; }
       detectorRef.current = openingDetector;
       const video = videoRef.current;
@@ -74,16 +69,16 @@ export function useHandTracker() {
         if (video.readyState >= 2 && video.currentTime !== lastVideoTime && now - lastInference >= 55) {
           lastVideoTime = video.currentTime; lastInference = now;
           try {
-            const result = detector.detectForVideo(video, now);
-            const label = result.handedness[0]?.[0]?.categoryName;
-            const landmarks = result.worldLandmarks[0] ? normalizeHand(result.worldLandmarks[0]) : [];
-            const image = result.landmarks[0];
-            const multiple = result.landmarks.length > 1;
+            const result = detector.detect(video, now);
+            const label = result.handedness[0]?.label;
+            const landmarks = result.world[0] ? normalizeHand(result.world[0]) : [];
+            const image = result.image[0];
+            const multiple = result.image.length > 1;
             const identityChanged = Boolean(label && expectedLabel.current && label !== expectedLabel.current);
             const inFrame = Boolean(image?.length === 21 && image.every(point => point.x > .025 && point.x < .975 && point.y > .025 && point.y < .975));
             const tracking = !multiple && !identityChanged && inFrame && landmarks.length === 21 && pairAngles(landmarks).length === 4;
-            const reason = multiple ? 'Keep only one hand in the camera view.' : identityChanged ? 'Hand identity changed — show the same calibrated hand.' : result.landmarks.length && !inFrame ? 'Move your whole hand inside the camera view.' : tracking ? 'Hand detected' : 'Position your hand inside the guide.';
-            const next: TrackedSample = { t: 0, observedAt: now, tracking, landmarks: tracking ? landmarks : [], worldLandmarks: tracking ? result.worldLandmarks[0].map(p => ({ x: p.x, y: p.y, z: p.z })) : undefined, imageLandmarks: tracking ? image.map(p => ({ x: p.x, y: p.y, z: p.z })) : undefined, confidence: tracking ? (result.handedness[0]?.[0]?.score ?? 0) : 0, modelHandedness: label, reason };
+            const reason = multiple ? 'Keep only one hand in the camera view.' : identityChanged ? 'Hand identity changed — show the same calibrated hand.' : result.image.length && !inFrame ? 'Move your whole hand inside the camera view.' : tracking ? 'Hand detected' : 'Position your hand inside the guide.';
+            const next: TrackedSample = { t: 0, observedAt: now, tracking, landmarks: tracking ? landmarks : [], worldLandmarks: tracking ? result.world[0].map(p => ({ x: p.x, y: p.y, z: p.z })) : undefined, imageLandmarks: tracking ? image.map(p => ({ x: p.x, y: p.y, z: p.z })) : undefined, confidence: tracking ? (result.handedness[0]?.score ?? 0) : 0, modelHandedness: label, reason };
             latestRef.current = next; setSample(next);
             const canvas = canvasRef.current;
             if (canvas) {

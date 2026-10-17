@@ -177,6 +177,9 @@ export const representativeRep = (reps: Repetition[]) =>
   );
 export function compatible(
   a: {
+    trackingMode?: string;
+    cameraView?: string;
+    analysisVersion?: string;
     exerciseId: string;
     selectedHand: string;
     mirrored: boolean;
@@ -184,6 +187,9 @@ export function compatible(
     comparisonGroup?: string;
   },
   b: {
+    trackingMode?: string;
+    cameraView?: string;
+    analysisVersion?: string;
     exerciseId: string;
     selectedHand: string;
     mirrored: boolean;
@@ -192,6 +198,10 @@ export function compatible(
   },
 ) {
   if (
+    (a.trackingMode ?? 'hand') !== (b.trackingMode ?? 'hand') ||
+    Boolean(a.demonstration) !== Boolean(b.demonstration) ||
+    a.cameraView !== b.cameraView ||
+    a.analysisVersion !== b.analysisVersion ||
     a.exerciseId !== b.exerciseId ||
     a.selectedHand !== b.selectedHand ||
     a.mirrored !== b.mirrored
