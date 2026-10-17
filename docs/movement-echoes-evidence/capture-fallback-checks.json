@@ -1,0 +1,42 @@
+{
+  "loadPreparedDemoMs": 468,
+  "fallback": {
+    "videos": 2,
+    "source": "blob:http://localhost:5174/f907470b-22f5-4e21-9997-b174aa58d805",
+    "overflow": false
+  },
+  "phases": {
+    "a": 0.6566724564404185,
+    "b": 0.6458268086439086,
+    "aPaused": true,
+    "bPaused": true
+  },
+  "capture": {
+    "constraints": {
+      "video": {
+        "width": {
+          "ideal": 720
+        },
+        "height": {
+          "ideal": 480
+        },
+        "facingMode": "user"
+      },
+      "audio": false
+    },
+    "audioTracks": 0,
+    "trackStates": [
+      "ended"
+    ],
+    "durationMs": 1497,
+    "bytes": 6076,
+    "validHandFrames": 0,
+    "reps": 0,
+    "storedType": "video/webm;codecs=vp9"
+  },
+  "nativeVideo": {
+    "ready": 4,
+    "duration": 1.497
+  },
+  "errors": []
+}

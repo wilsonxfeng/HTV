@@ -1,0 +1,120 @@
+{
+  "initial": {
+    "focus": "higher ROMOriginal video",
+    "phase": 0.5,
+    "time": 2.902796,
+    "urls": 1,
+    "width": 390,
+    "scroll": 390,
+    "canvases": 1,
+    "videos": 1,
+    "canvasAlpha": 36015
+  },
+  "playing": {
+    "focus": "higher ROMOriginal video",
+    "phase": 0.659,
+    "time": 3.351213,
+    "urls": 1,
+    "width": 390,
+    "scroll": 390,
+    "canvases": 1,
+    "videos": 1,
+    "canvasAlpha": 36776
+  },
+  "paused": {
+    "focus": "higher ROMOriginal video",
+    "phase": 0.659,
+    "time": 3.351213,
+    "urls": 1,
+    "width": 390,
+    "scroll": 390,
+    "canvases": 1,
+    "videos": 1,
+    "canvasAlpha": 36742
+  },
+  "beforeSwitch": {
+    "focus": "higher ROMOriginal video",
+    "phase": 0.27,
+    "time": 2.025322,
+    "urls": 1,
+    "width": 390,
+    "scroll": 390,
+    "canvases": 1,
+    "videos": 1,
+    "canvasAlpha": 36490
+  },
+  "afterSwitch": {
+    "focus": "high ROMOriginal video",
+    "phase": 0.27,
+    "time": 1.318325,
+    "urls": 1,
+    "width": 390,
+    "scroll": 390,
+    "canvases": 1,
+    "videos": 1,
+    "canvasAlpha": 32747
+  },
+  "hits": {
+    "single": {
+      "x": 394,
+      "y": 148,
+      "ids": [
+        "echo-demo-low"
+      ]
+    },
+    "multiple": {
+      "x": 426,
+      "y": 130,
+      "ids": [
+        "echo-demo-higher",
+        "echo-demo-low-med",
+        "echo-demo-low"
+      ]
+    }
+  },
+  "clicked": {
+    "focus": "low ROMOriginal video",
+    "phase": 0.5,
+    "time": 2.060946,
+    "urls": 1,
+    "width": 1440,
+    "scroll": 1440,
+    "canvases": 1,
+    "videos": 1,
+    "canvasAlpha": 34396
+  },
+  "overflow": [],
+  "errors": [],
+  "pixelReadsDuringPlayback": 0,
+  "saved": {
+    "sessions": 4,
+    "caches": 4,
+    "frames": 97,
+    "validFrames": 97,
+    "sourceSizes": [
+      6012058,
+      7684684,
+      7946603,
+      7743978
+    ],
+    "fingerprints": [
+      "9ba14a74c926f0e6ddedfb4325769204b8d9b2434299ab7acf1b34f5b229c649",
+      "1f21f35187fdf06b42d6e5a3d5dd5fe684e433b832bc46a0f6096957838667ee",
+      "7330e289925ec2d90d60e74f6c8f0b85109ae990ad8993eeef53d0cd7e9de60c",
+      "1a609255fcf780e37c447199648452bb30ca5ea23289fd44a4f3055a94a8b2f4"
+    ]
+  },
+  "afterReload": {
+    "focus": "higher ROMOriginal video",
+    "phase": 0.5,
+    "time": 2.902796,
+    "urls": 1,
+    "width": 1440,
+    "scroll": 1440,
+    "canvases": 1,
+    "videos": 1,
+    "canvasAlpha": 0
+  },
+  "deleted": 3,
+  "urlsAfterClose": 0
+}
