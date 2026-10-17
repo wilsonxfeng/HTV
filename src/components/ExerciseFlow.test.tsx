@@ -24,7 +24,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 async function mount() {
-  const props = { onBack: vi.fn(), onComplete: vi.fn() };
+  const props = { onBack: vi.fn(), onComplete: vi.fn(), onRecorded: vi.fn() };
   const view = render(<ExerciseFlow {...props}/>);
   // Flush the lazy coach import without advancing lesson timers.
   await act(async () => { await import('./VoiceCoach'); });
@@ -84,6 +84,18 @@ describe('coach-driven practice', () => {
     expect(screen.getByText('Stop practice')).toBeTruthy();
     act(() => vi.advanceTimersByTime(3100));
     expect(document.querySelector('.ex-step-recording')).toBeTruthy();
+  });
+  it('saves a finished practice before the replay is opened', async () => {
+    const view = await calibrated();
+    fireEvent.click(screen.getByText('Reply begin'));
+    act(() => vi.advanceTimersByTime(3100));
+    for (let i = 0; i < 500 && !view.props.onRecorded.mock.calls.length; i++) {
+      act(() => { vi.advanceTimersByTime(66); observe(createDemoSession().calibration.target); });
+    }
+    expect(view.props.onRecorded).toHaveBeenCalledOnce();
+    expect(view.props.onRecorded.mock.calls[0][0].completed).toBe(true);
+    expect(view.props.onComplete).not.toHaveBeenCalled();
+    expect(screen.getByText('Recording complete')).toBeTruthy();
   });
   it('cancels the countdown and camera when voice disconnects', async () => {
     await calibrated();

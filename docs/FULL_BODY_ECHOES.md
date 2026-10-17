@@ -30,7 +30,7 @@ The low → peak → low detector uses robust observed signal thresholds and a s
 
 `videoTime = landmarkTime + landmarkOffsetMs`. Metadata records the real offset rather than inferring it from dates. Automatic capture ends near 90 seconds. The UI keeps manual start/pause/resume/finish controls and retries a failed local save.
 
-Original video, metadata and pose frames are committed together to IndexedDB `remotion-body-recordings`. Normalized Echoes data and derived masks use the existing Echoes repository. Saved motion history opens body review instead of the hand 3D studio. Completed body practice can earn the same one-watering-per-day Garden reward; extra repetitions earn no extra reward.
+Original video, metadata and pose frames are committed together to IndexedDB `remotion-body-recordings`. Normalized Echoes data and derived masks use the existing Echoes repository. Saved motion history opens body review instead of the hand 3D studio. Each completed body practice grows one Garden flower; duplicate saves and extra repetitions within that session earn no extra flower.
 
 Clinician sharing requires the existing patient access and explicit sharing consent. The same durable outbox, signed uploads, original-video hash checks and completion API handle body recordings. Upload failures leave the local copy available for retry. History deletion removes the local body recording and its derived Echoes copy; a separately consented upload-outbox copy is managed in Clinician sharing, as before.
 

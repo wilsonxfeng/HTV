@@ -1,1 +1,0 @@
-import{a as e,n as t,t as n}from"./jsx-runtime-Wy9s6hX0.js";import{v as r}from"./styles-nmN63Wlf.js";import{t as i}from"./ClinicianDashboard-D63fxq0i.js";var a=e(t(),1),o=e(r(),1),s=n();(0,o.createRoot)(document.getElementById(`root`)).render((0,s.jsx)(a.StrictMode,{children:(0,s.jsx)(i,{})}));

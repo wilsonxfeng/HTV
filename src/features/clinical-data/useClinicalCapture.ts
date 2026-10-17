@@ -17,7 +17,7 @@ export function useClinicalCapture() {
     const capture = new SessionVideoCapture();
     const control = capture.start(video, originMs, startedAt);
     active.current = { capture, stop: control.stop, access: { ...access }, startedAt }; finishing.current = false;
-    setNotice('Recording video for your clinician.');
+    setNotice('Recording video for Progress.');
   };
   const finish = (motion: MotionSession) => {
     const current = active.current;
@@ -33,7 +33,7 @@ export function useClinicalCapture() {
         await recordingOutbox.save(metadata, saved, captured.video); setVersion(value => value + 1); setNotice('Saved locally. Uploading…');
         if (useClinicalAccess.getState().access?.token !== current.access.token) { setNotice('Saved locally. Reconnect this patient to upload.'); return; }
         const result = await recordingOutbox.sync(motion.id, clinicalRepository);
-        setNotice(result.state === 'synced' ? 'Uploaded for clinician review.' : result.error ?? 'Saved locally. Retry upload.');
+        setNotice(result.state === 'synced' ? 'Saved to synced history.' : result.error ?? 'Saved locally. Retry upload.');
         if (result.state === 'synced') {
           // AI failure is independent from upload success. No fabricated fallback summary.
           void clinicalRepository.report(motion.id).catch(() => {});

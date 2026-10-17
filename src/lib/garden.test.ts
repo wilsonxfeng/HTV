@@ -7,11 +7,11 @@ describe('participation garden',()=>{
  it('excludes samples, interrupted sessions and sessions without tracking',()=>{
  const s=recording();expect(gardenProgress([createDemoSession(),{...s,completed:false},{...s,duration:5},{...s,frames:[]}]).waters).toBe(0);
  });
- it('waters once per local calendar day, even after repeated saves or extra practice',()=>{
- const s=recording();const p=gardenProgress([s,s,{...s,id:'second'}]);expect(p.waters).toBe(1);expect(p.stage).toBe(1);expect(p.blooms).toBe(0);
+ it('grows one flower per completed session on the same day and ignores duplicate saves',()=>{
+ const s=recording();const p=gardenProgress([s,s,{...s,id:'second'}]);expect(p.waters).toBe(2);expect(p.stage).toBe(0);expect(p.blooms).toBe(2);expect(p.days).toHaveLength(1);
  });
- it('blooms after four practice days and starts another seed without losing old flowers',()=>{
- const p=gardenProgress([recording(1),recording(4),recording(8),recording(11)]);expect(p.blooms).toBe(1);expect(p.stage).toBe(0);expect(p.completed).toHaveLength(4);
+ it('keeps a flower for every completed session across practice days',()=>{
+ const p=gardenProgress([recording(1),recording(4),recording(8),recording(11)]);expect(p.blooms).toBe(4);expect(p.stage).toBe(0);expect(p.completed).toHaveLength(4);
  });
  it('supports completed legacy recordings without migrating their data',()=>{
  const {completed:_,...legacy}=recording();expect(isCompletedPractice(legacy)).toBe(true);

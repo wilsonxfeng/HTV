@@ -6,13 +6,12 @@ export function isCompletedPractice(s: MotionSession) {
   return s.source === 'camera' && s.completed !== false && s.duration >= s.cycleDuration * 3 - .2 && s.frames.filter(f => f.tracking && f.landmarks.length === 21).length >= 8;
 }
 export function gardenProgress(sessions: MotionSession[]) {
-  const completed = sessions.filter(isCompletedPractice);
+  const completed = [...new Map(sessions.filter(isCompletedPractice).map(s => [s.id, s])).values()];
   const days = [...new Set(completed.map(s => dayKey(s.createdAt)))].sort();
-  const waters = days.length;
-  // One watering per practice day: additional repetitions never accelerate rewards.
-  const blooms = Math.floor(waters / 4);
-  const stage = waters % 4;
-  return { completed, days, waters, blooms, stage, stageName: STAGES[stage], next: 4-stage };
+  const waters = completed.length;
+  const blooms = completed.length;
+  const stage = 0;
+  return { completed, days, waters, blooms, stage, stageName: STAGES[stage], next: 1 };
 }
 export function weekDays(now = new Date()) {
   const start = new Date(now); start.setHours(12,0,0,0); start.setDate(start.getDate() - (start.getDay()+6)%7);

@@ -340,7 +340,7 @@ export default function MovementEchoes({
         {onClose && (
           <button className="echo-back" onClick={onClose}>
             <ArrowLeft size={20} />
-            {backLabel ?? (providedOnly ? 'Back to dashboard' : 'Back to Progress')}
+            {backLabel ?? 'Back to Progress'}
           </button>
         )}
         <div className="echo-title-row">

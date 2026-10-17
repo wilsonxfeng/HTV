@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Camera, Pause, Play, Square } from 'lucide-react';
 const VoiceCoach=lazy(()=>import('../../../components/VoiceCoach'));
-const PatientSyncPanel=lazy(()=>import('../../clinician/PatientSyncPanel'));
+const PatientSyncPanel=lazy(()=>import('../../clinical-data/components/PatientSyncPanel'));
 import { useApp } from '../../../lib/store';
 import type { MotionSession, HandSide } from '../../../lib/types';
 import { usePoseTracker } from '../../body-tracking/poseTracker';

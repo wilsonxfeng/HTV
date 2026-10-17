@@ -2,7 +2,7 @@
 
 A hand-movement visualization MVP with optional, consented clinician sharing. Record **Finger Spread & Close**, calibrate a comfortable reference, and replay estimated 3D landmarks alongside a reference ghost. This is a technology demonstration, not a validated clinical assessment or treatment.
 
-See [backend setup and clinician dashboard](server/README.md) for TigerData, R2/S3, Gemini, offline uploads, and the local synthetic demo. Live cloud verification requires configured credentials.
+See [backend setup and synced Progress history](server/README.md) for TigerData, R2/S3, Gemini, offline uploads, and the local synthetic demo. Live cloud verification requires configured credentials.
 
 ## Run
 
@@ -73,7 +73,7 @@ WebGL 2 is needed for 3D. A labeled 2D fallback preserves playback and measureme
 
 ## Validation and limits
 
-The strict production build and automated tests cover the implementation. Tests cover rigid-transform and scale invariance, depth preservation, pair angles, personalized and clinician targets, replay gaps, insufficient data, hold coverage, overshoot, synthetic session evaluation, daily garden rewards, and reference-video extraction/cancellation. Browser checks cover real MediaPipe model initialization/inference, 3D rendering, replay, layer controls, local persistence and responsive layout. No automated test validates neurological recovery, clinical accuracy, or a person's real webcam exercise. A complete live-hand session must still be checked with a person and webcam before a live demo.
+The strict production build and automated tests cover the implementation. Tests cover rigid-transform and scale invariance, depth preservation, pair angles, personalized and clinician targets, replay gaps, insufficient data, hold coverage, overshoot, synthetic session evaluation, per-session garden rewards, and reference-video extraction/cancellation. Browser checks cover real MediaPipe model initialization/inference, 3D rendering, replay, layer controls, local persistence and responsive layout. No automated test validates neurological recovery, clinical accuracy, or a person's real webcam exercise. A complete live-hand session must still be checked with a person and webcam before a live demo.
 
 ## Exercise context and assets
 
@@ -89,9 +89,9 @@ The model comes from [Google's MediaPipe model distribution](https://storage.goo
 
 ## Garden mobile interface
 
-The Home, Practice, Garden and Progress tabs are designed for phone screens, with a warm cream/green palette and original local gouache artwork. Motion Studio still renders interactive estimated 3D landmarks. Measurement details are expandable, and Progress includes session history, comparison, exports and a local clinician preview.
+The Home, Practice, Garden and Progress tabs are designed for phone screens, with a warm cream/green palette and original local gouache artwork. Motion Studio still renders interactive estimated 3D landmarks. Measurement details are expandable, and Progress includes session history, comparison, exports Ask ReMotion, synced history, and hand/body overlays.
 
-Garden growth is derived from completed camera recordings in the existing IndexedDB database. One completed local calendar day supplies one watering; four practice days produce a flower. Samples and partial sessions do not contribute. Extra repetitions on the same day do not accelerate rewards. Rest days never remove flowers. Deleting the underlying recordings or clearing browser storage changes the derived garden. No schema migration is required; completed legacy recordings remain supported.
+Garden growth is derived from completed camera recordings in the existing IndexedDB database. Each completed camera practice session grows one flower, including separate sessions on the same day. Samples, partial sessions and duplicate saves do not contribute. Extra repetitions within a session do not earn additional flowers. Rest days never remove flowers. Deleting the underlying recordings or clearing browser storage changes the derived garden. No schema migration is required; completed legacy recordings remain supported.
 
 Reference-video import from the upstream coaching update is available while setting a target, after neutral calibration. The resulting video example is labeled distinctly in target review and replay. All video decoding and MediaPipe processing stay local.
 
@@ -115,3 +115,5 @@ SDK documentation: [ElevenLabs React SDK](https://elevenlabs.io/docs/eleven-agen
 Progress → Movement Echoes opens real-video hand ghost comparison. The four supplied demonstration clips are bundled unchanged, with reviewed phase samples for quick local loading. Three clips animate through detected cycles; the low-range clip is an explicitly static pose. Imported or consented new videos and derived cutouts use a separate local database. There is no voice upload or garden reward side effect.
 
 See [Movement Echoes](docs/MOVEMENT_ECHOES.md), [capture guide](docs/MOVEMENT_ECHOES_CAPTURE_GUIDE.md), and [merge handoff](docs/MOVEMENT_ECHOES_MERGE.md). `npm run dev:echoes` launches the independent harness; `npm run build:echoes` builds it.
+
+See [Progress demo recording plan](docs/PROGRESS_DEMO_PLAN.md) for preparing searchable finger/knee recordings and presenting the live session.

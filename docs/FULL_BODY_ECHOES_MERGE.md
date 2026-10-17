@@ -30,7 +30,6 @@ Run:
 npm test
 npm run api:check
 npm run build
-npm run build:clinician
 npm run build:echoes
 ```
 

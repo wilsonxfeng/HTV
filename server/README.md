@@ -1,6 +1,6 @@
-# Clinician backend
+# ReMotion history backend
 
-Implementation lives on `feature/tigerdata-backend`. This is a hackathon prototype for consenting teammates and fictional patient information, not a production medical portal.
+This is a hackathon prototype for consenting teammates and fictional patient information, not a production medical portal.
 
 ## Local demonstration
 
@@ -11,7 +11,7 @@ npm run api:demo:seed
 npm run dev
 ```
 
-Open `http://localhost:5173/src/features/clinician/dashboard/index.html` and choose **Use local demo**. The demo API binds to loopback, creates a fictional patient, and stores data persistently in embedded PostgreSQL and private local video files under `.remotion-data/`. It does **not** connect to TigerData, R2, or S3. The optional seed uses FFmpeg to encode three labeled synthetic hand videos, with authored landmarks from the same frames and fictional session dates. These are pipeline fixtures, not camera observations or evidence of improvement. No AI summary is fabricated when a Gemini key is missing.
+Open `http://localhost:5173/`, choose **Progress → Connect synced history → Use local demo**. The demo API binds to loopback, creates a fictional patient, and stores data persistently in embedded PostgreSQL and private local video files under `.remotion-data/`. It does **not** connect to TigerData, R2, or S3. The optional seed uses FFmpeg to encode three labeled synthetic hand videos, with authored landmarks from the same frames and fictional session dates. These are pipeline fixtures, not camera observations or evidence of improvement. No AI summary is fabricated when a Gemini key is missing.
 
 For subsequent runs use `npm run api:demo`. Do not start two API processes against the same embedded database directory. `.remotion-data/` and server source are denied by the Vite development server and excluded from Git. Delete `.remotion-data/` only when you intend to reset local demonstration data.
 
@@ -35,25 +35,25 @@ npm run api:provision -- 'Consenting demo participant' clinician-demo '1,3,5' Am
 
 The command prints scoped eight-hour bearer tokens. Deliver each token only to its intended demo user. Tokens are entered in the app and kept in tab session storage, never embedded in the client build. `npm run api:token -- clinician SUBJECT PATIENT_UUID` reissues access for an existing assignment. This is demo access provisioning, not an account system: there is no login, account recovery, immediate token revocation, audit trail, or production clinician identity verification. Do not expose the demo as a secure medical portal.
 
-For a local cloud-backed fixture preview, `LOCAL_DEMO_PATIENT_ID` enables the dashboard's **Use local demo** button for that one fictional patient. It issues clinician access only, rejects patients containing camera recordings, and is disabled in production or on a non-loopback API host. This opt-in preview uses the configured TigerData/R2 services; it does not enable patient uploads or provision access to real participants.
+For a local cloud-backed fixture preview, `LOCAL_DEMO_PATIENT_ID` enables the history connection’s **Use local demo** button for that one fictional patient. It issues clinician access only, rejects patients containing camera recordings, and is disabled in production or on a non-loopback API host. This opt-in preview uses the configured TigerData/R2 services; it does not enable patient uploads or provision access to real participants.
 
 ## Patient recording
 
-In **Practice → Clinician sharing**, connect patient access, then explicitly consent to saving silent webcam video and hand data. Start the existing voice-led lesson. Calibration and progress still use the current coach and MediaPipe tracking; the recorder reuses that camera stream and excludes microphone audio.
+In **Practice → Save to Progress**, connect patient access, then explicitly consent to saving silent webcam video and hand data. Start the existing voice-led lesson. Calibration and progress still use the current coach and MediaPipe tracking; the recorder reuses that camera stream and excludes microphone audio.
 
 At recording start the app assigns a UUID, a wall-clock start date, and one monotonic origin. Landmark timestamps are relative to that origin. `landmarkOffsetMs` records the difference between the landmark origin and the MediaRecorder start call, with `videoTime = landmarkTime + offset`. It is never inferred from wall-clock dates. MediaRecorder/browser scheduling still introduces small encoding-start uncertainty; this is not hardware frame synchronization. The same offset is used for detected cycles, flagged-moment seeking, and Movement Echoes. Mirroring changes only the preview; the stored pixels and image landmarks use the original encoding orientation.
 
 On completion the app commits the video Blob, metadata, and landmarks to one IndexedDB outbox record **before** sending network requests. UUIDs and content hashes remain stable across retries and refresh. A failed upload preserves the local copy. Retry from the sharing panel, or reconnect to trigger pending uploads. Uploads use short-lived signed PUT URLs. Completion verifies uploaded bytes and metadata, copies the staging object to a finalized key, computes metrics/cycles on the server, and inserts frames, repetitions, and reports in one PostgreSQL transaction. Completed objects cannot be overwritten by an earlier upload URL. Repeated identical completion requests return the same record; conflicting data returns 409.
 
-Local and cloud copies are separate. **Remove local copy** removes only the IndexedDB backup. Backend recordings are retained until removed administratively; lifecycle retention and remote deletion workflows are not implemented. Old landmark-only sessions do not acquire invented videos or automatically upload. Ordinary Practice remains landmark-only unless clinician sharing is connected and consented.
+Local and cloud copies are separate. **Remove local copy** removes only the IndexedDB backup. Backend recordings are retained until removed administratively; lifecycle retention and remote deletion workflows are not implemented. Old landmark-only sessions do not acquire invented videos or automatically upload. Ordinary Practice remains landmark-only unless synced history is connected and video capture is consented.
 
-## Dashboard and Movement Echoes
+## Progress and Movement Echoes
 
-The dashboard reads actual API records. It shows session count, latest practice, adherence to configured weekdays over the last 28 days, and the latest estimated index–middle hold angle. Missing schedules and insufficient tracking remain explicit. Charts use actual dates and separate different hands/calibrations. Detected cycles come from measured spread, not elapsed-time repetition counts or Gemini.
+Progress is the single review screen. It shows exercise/side filters, actual local or synced measurements grouped by reference, recording history, Ask ReMotion, and hand/body overlays. A scoped patient token supports both recording and searching their own history; clinician tokens retain assigned read access. The former clinician dashboard and standalone entry have been removed. See [the demo recording plan](../docs/PROGRESS_DEMO_PLAN.md).
 
 Session replay downloads the stored video through an authorized five-minute link. Cycle peaks and differences seek using the stored video/landmark clock offset. Select 2–4 compatible sessions to launch the existing Movement Echoes renderer. Its new `providedOnly` integration mode excludes unrelated browser clips, hides local import/delete/marker editing, and keeps extracted images in memory instead of IndexedDB. Closing the viewer releases that component’s video URLs and images.
 
-Generate a grounded Gemini session summary from the dashboard, or use the report generated after a successful patient upload. Only deterministic metrics and comparable preceding sessions go to Gemini; videos, landmarks, names, and patient IDs are not sent. Structured output is schema-validated, and unsupported numeric/clinical assertions are rejected. AI text is still fallible and must be reviewed; original measurements remain authoritative. A provider error returns 503 without changing the recording. Print produces a browser print view with measurements and any generated report.
+Grounded Gemini reports are still generated after successful uploads through the existing report API. The Progress UI uses Ask ReMotion for evidence search. Reports remain available through the API; the old dashboard report/print interface has been removed.
 
 ## Verification
 
@@ -61,7 +61,6 @@ Generate a grounded Gemini session summary from the dashboard, or use the report
 npm test
 npm run api:check
 npm run build
-npm run build:clinician
 npm run build:echoes
 ```
 

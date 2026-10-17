@@ -1,6 +1,6 @@
 # Ask ReMotion rehearsal
 
-Use `feature/ask-remotion`, not main. Start the existing API and frontend (`npm run api:dev`, `npm run dev`); for fictional local data use the existing `npm run api:demo:seed` (ffmpeg required). Open the clinician dashboard and connect clinician access. Choose an authorized patient and the correct side. Use at least two completed, adequately tracked finger sessions with compatible calibration/viewpoint/version, and one knee-extension session if demonstrating knee range. No data means a truthful empty result.
+Start the existing API and frontend (`npm run api:dev`, `npm run dev`); for fictional local data use the existing `npm run api:demo:seed` (ffmpeg required). Open Progress and connect synced history with the participant’s assigned patient token. Choose an authorized patient and the correct side. Use at least two completed, adequately tracked finger sessions with compatible calibration/viewpoint/version, and one knee-extension session if demonstrating knee range. No data means a truthful empty result.
 
 ## 30-second sequence
 
@@ -21,6 +21,8 @@ Questions such as “Is this patient recovering?” or “What treatment should 
 
 Check patient/side, two compatible finger recordings, ≥80% tracking, playable signed video, Gemini model access if typing questions, and original recording decode. If the backend has only knee data, demonstrate knee range honestly; do not use mock finger answers. Existing local knee demo mode is separate from the authenticated shared-history search.
 
-Close Movement Echoes to return to the dashboard. Search remains available while viewing echoes, and loaded recordings/overlay settings persist across searches. New searches cancel stale navigation.
+Close Movement Echoes to return to Progress. Search remains available while viewing echoes, and loaded recordings/overlay settings persist across searches. New searches cancel stale navigation.
 
 Verification: 141 automated tests passed in the final full regression. Backend TypeScript and production app, clinician, Movement Echoes and voice builds passed. Real browser verification passed on existing team knee footage with a temporary embedded PostgreSQL API; live Gemini and remote TigerData/R2 were not exercised.
+
+For the current filming checklist and live presentation order, see [Progress demo plan](PROGRESS_DEMO_PLAN.md).

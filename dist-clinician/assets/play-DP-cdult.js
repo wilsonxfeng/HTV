@@ -1,1 +1,0 @@
-import{_ as e}from"./styles-nmN63Wlf.js";var t=e(`ArrowRight`,[[`path`,{d:`M5 12h14`,key:`1ays0h`}],[`path`,{d:`m12 5 7 7-7 7`,key:`xquz4c`}]]),n=e(`Play`,[[`polygon`,{points:`6 3 20 12 6 21 6 3`,key:`1oa8hb`}]]);export{t as n,n as t};

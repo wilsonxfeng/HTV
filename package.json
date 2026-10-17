@@ -15,7 +15,6 @@
     "api:demo": "DEMO_MODE=true tsx server/main.ts",
     "api:check": "tsc -p server/tsconfig.json",
     "api:token": "tsx server/token.ts",
-    "build:clinician": "tsc -b && vite build --config vite.clinician.config.ts",
     "api:demo:seed": "DEMO_MODE=true SEED_DEMO=true tsx server/main.ts",
     "api:provision": "tsx server/provision.ts",
     "dev:voice": "vite --config src/features/voice-coach/harness/vite.config.ts",

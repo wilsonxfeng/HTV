@@ -11,7 +11,7 @@ import { useClinicalCapture } from '../features/clinical-data/useClinicalCapture
 import './exercise.css';
 
 const VoiceCoach = lazy(()=>import('./VoiceCoach'));
-const PatientSyncPanel = lazy(()=>import('../features/clinician/PatientSyncPanel'));
+const PatientSyncPanel = lazy(()=>import('../features/clinical-data/components/PatientSyncPanel'));
 
 type Step = 'neutral' | 'target' | 'ready' | 'countdown' | 'recording' | 'done';
 type Capture = { kind: 'neutral' | 'target'; start: number; stableStart: number; lastObservedAt: number; points: Vec3[][]; anchor: Vec3[]; wrist: Vec3 | null; label: string | null };
@@ -20,7 +20,7 @@ function Guide({ hand }: { hand: HandSide }) {
   return <svg className="ex-placement-guide" style={{ transform: hand === 'Left' ? 'scaleX(-1)' : undefined }} viewBox="0 0 400 430" aria-hidden="true"><path d="M135 376 C124 345 104 317 90 295 L52 233 C41 211 57 193 74 205 L118 247 L110 112 C108 88 134 85 138 108 L151 214 L153 65 C152 40 178 40 181 64 L186 206 L198 53 C200 28 225 32 224 57 L223 211 L240 87 C243 64 266 68 263 91 L256 224 L277 150 C283 130 305 136 299 156 L282 270 C278 314 254 346 250 376" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="7 8"/><path d="M132 379H253" stroke="currentColor" strokeWidth="2" strokeDasharray="7 8"/></svg>;
 }
 
-export default function ExerciseFlow({ onComplete, onBack }: { onComplete: (session: MotionSession) => void; onBack: () => void }) {
+export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRecorded?: (session: MotionSession) => void; onComplete: (session: MotionSession) => void; onBack: () => void }) {
   const tracker = useHandTracker();
   const clinicalCapture = useClinicalCapture();
   const clinicalCaptureRef = useRef(clinicalCapture); clinicalCaptureRef.current = clinicalCapture;
@@ -136,7 +136,7 @@ export default function ExerciseFlow({ onComplete, onBack }: { onComplete: (sess
     if (!calibration) return;
     const frames = recordingRef.current;
     const result: MotionSession = { id: recordingId.current, createdAt: recordedAt.current, hand, duration, cycleDuration, frames: [...frames], calibration, source: 'camera', exerciseId: exercise.id, completed: duration >= totalDuration - .2 };
-    setSession(result); setElapsed(duration); setPartial(duration < totalDuration - .2); setStep('done'); clinicalCaptureRef.current.finish(result); stop();
+    onRecorded?.(result); setSession(result); setElapsed(duration); setPartial(duration < totalDuration - .2); setStep('done'); clinicalCaptureRef.current.finish(result); stop();
   };
   finishRef.current = finishRecording;
 

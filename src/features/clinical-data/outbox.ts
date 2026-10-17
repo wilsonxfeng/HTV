@@ -3,6 +3,8 @@ import type { DBSchema } from 'idb';
 import type { MotionSession } from '../../lib/types';
 import type { CreateSession, SessionRepository } from './contracts';
 
+export const HISTORY_UPDATED_EVENT = 'remotion-history-updated';
+
 export interface PendingRecording {
   id: string;
   metadata: CreateSession;
@@ -37,7 +39,9 @@ export function createOutbox(name = 'remotion-clinical-outbox') {
         entry.state = 'uploading'; entry.attempts++; delete entry.error; await put(entry);
         try { await repository.upload(entry.metadata, entry.motion, entry.video, signal); entry.state = 'synced'; }
         catch (error) { entry.state = 'error'; entry.error = error instanceof Error ? error.message : 'Upload failed.'; }
-        await put(entry); return entry;
+        await put(entry);
+        if (entry.state === 'synced' && typeof window !== 'undefined') window.dispatchEvent(new Event(HISTORY_UPDATED_EVENT));
+        return entry;
       };
       const work = (async () => globalThis.navigator?.locks ? await navigator.locks.request(`remotion-upload-${id}`, upload) : await upload())().finally(() => pending.delete(id));
       pending.set(id, work); return work;

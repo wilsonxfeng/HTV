@@ -89,7 +89,7 @@ export async function buildApi(config: Config, repository: ClinicalRepository, r
   const searchParser = intentParser ?? (config.geminiKey ? new GeminiIntentParser(config.geminiKey, config.geminiModel) : undefined);
   app.post('/api/ask-remotion', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async request => {
     const user = await principal(request.headers.authorization);
-    const input = requestSchema.parse(request.body); authorize(user, input.patientId, true);
+    const input = requestSchema.parse(request.body); authorize(user, input.patientId);
     if (!input.preset && !searchParser) throw new HttpError(503, 'Question interpretation is unavailable. Try a suggested search.');
     const intent = input.preset ? presetIntent(input.preset, input.exerciseContext.side) : intentSchema.parse(await searchParser!.parse(input.question, input.exerciseContext));
     return executeSearch(repository.db, input.patientId, intent, input.preset ? 'preset' : 'gemini');

@@ -67,9 +67,15 @@ describe('deterministic stored evidence',()=>{
 });
 describe('authorized API and provider fallback',()=>{
  const payload={patientId:patient,question:'greatest opening',preset:'greatest-finger',exerciseContext:{exerciseId:'finger-spread-close',side:'Right'}};
- it('requires authentication and clinician patient access',async()=>{
+ it('requires authentication and assigned history access',async()=>{
  expect((await app.inject({method:'POST',url:'/api/ask-remotion',payload})).statusCode).toBe(401);
  expect((await app.inject({method:'POST',url:'/api/ask-remotion',headers:{authorization:`Bearer ${token}`},payload:{...payload,patientId:other}})).statusCode).toBe(403);
+ });
+ it('allows a patient to search only their own synced history',async()=>{
+ const ownToken=await issueToken(secret,{sub:'participant',role:'patient',patientIds:[patient]});
+ const headers={authorization:`Bearer ${ownToken}`};
+ expect((await app.inject({method:'POST',url:'/api/ask-remotion',headers,payload})).json().evidence[0].sessionId).toBe(latest);
+ expect((await app.inject({method:'POST',url:'/api/ask-remotion',headers,payload:{...payload,patientId:other}})).statusCode).toBe(403);
  });
  it('offers real presets without Gemini and returns a clear typed-question error',async()=>{
  const headers={authorization:`Bearer ${token}`};
