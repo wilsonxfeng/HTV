@@ -1,3 +1,4 @@
+import type { EvidenceFocus } from '../ask-remotion/contracts';
 import { baselineAnchors } from '../body-echoes/bodyAlignment';
 import { getExercise } from '../body-exercises/exerciseRegistry';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -15,6 +16,7 @@ import type { EchoSession, GhostCache } from './types';
 
 export interface EchoViewerProps {
   sessions: EchoSession[];
+  evidenceFocus?: EvidenceFocus;
   focusId: string;
   repChoices: Record<string, number>;
   caches: Record<string, GhostCache>;
@@ -25,6 +27,7 @@ export interface EchoViewerProps {
 }
 export default function EchoViewer({
   sessions,
+  evidenceFocus,
   focusId,
   repChoices,
   caches,
@@ -119,7 +122,14 @@ export default function EchoViewer({
     let disposed = false;
     const ready = () => {
       if (disposed) return;
-      if (rep)
+      if (evidenceFocus?.sessionId === focus.id && (evidenceFocus.repetitionIndex===null || evidenceFocus.repetitionIndex===(repChoices[focus.id]??0))) {
+        video.pause();playingRef.current=false;setPlaying(false);
+        const targetTime=(evidenceFocus.timestampMs??0)/1000;
+        waitingFrame.current=Math.abs(video.currentTime-targetTime)>.00001;
+        video.currentTime=targetTime;
+        if(!waitingFrame.current){setLoading(false);setRedraw(v=>v+1);}
+        if(rep){phaseRef.current=timeToPhase(evidenceFocus.timestampMs??rep.startMs,rep);setPhase(phaseRef.current);}
+      } else if (rep)
         video.currentTime =
           phaseToTime(rep.static ? 0.5 : phaseRef.current, rep) / 1000;
       else setLoading(false);
@@ -164,7 +174,7 @@ export default function EchoViewer({
     };
     // Playback rate is updated separately; changing it must not reload the source.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focus.video, focus.id, rep]);
+  }, [focus.video, focus.id, rep, evidenceFocus]);
   useEffect(() => {
     if (videoRef.current) videoRef.current.playbackRate = rate;
   }, [rate]);
