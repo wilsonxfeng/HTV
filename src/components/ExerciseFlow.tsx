@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Camera, Check, CheckCircle2, Circle, Hand, Loader2, LockKeyhole, RotateCcw, ShieldCheck, Square, Timer, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Camera, Check, CheckCircle2, Circle, Hand, Loader2, LockKeyhole, RotateCcw, ShieldCheck, Square, Timer, TriangleAlert } from 'lucide-react';
 import { averageHands, clinicianTarget, getPhase, pairAngles, referenceAt } from '../lib/geometry';
 import { useHandTracker } from '../lib/useHandTracker';
+import { extractReferenceFromVideo } from '../lib/referenceVideo';
 import type { Calibration, HandFrame, HandSide, MotionSession, Vec3 } from '../lib/types';
 import HandStage from './HandStage';
 import './exercise.css';
@@ -27,6 +28,8 @@ export default function ExerciseFlow({ onComplete, onBack }: { onComplete: (sess
   const [captureProgress, setCaptureProgress] = useState(0);
   const [hint, setHint] = useState('');
   const [showClinician, setShowClinician] = useState(false);
+  const [referenceVideoBusy, setReferenceVideoBusy] = useState(false);
+  const [referenceVideoProgress, setReferenceVideoProgress] = useState(0);
   const [gaps, setGaps] = useState(['', '', '']);
   const [cycleDuration, setCycleDuration] = useState(8);
   const [elapsed, setElapsed] = useState(0);
@@ -115,6 +118,19 @@ export default function ExerciseFlow({ onComplete, onBack }: { onComplete: (sess
     setStep('ready'); setHint('Clinician-provided target applied to your measured neutral hand.'); setShowClinician(false);
   };
 
+  const importReferenceVideo = async (file: File | undefined) => {
+    if (!file || !neutral.length || !confirmed || referenceVideoBusy) return;
+    setReferenceVideoBusy(true); setReferenceVideoProgress(0); setHint('Reading the local reference video. Nothing is uploaded.');
+    try {
+      const extracted = await extractReferenceFromVideo(file, setReferenceVideoProgress);
+      setNeutral(extracted.neutral);
+      setCalibration({ neutral: extracted.neutral, target: extracted.target, source: 'exemplar', hand, createdAt: new Date().toISOString(), exemplarName: file.name, exemplarFrames: extracted.frames });
+      setStep('ready'); setHint(`Reference created from ${extracted.frames} tracked frames in “${file.name}”. Review it as an exemplar, then record your own movement.`);
+    } catch (error) {
+      setHint(error instanceof Error ? error.message : 'The reference video could not be analyzed. Try another clip.');
+    } finally { setReferenceVideoBusy(false); }
+  };
+
   const finishRecording = (duration: number) => {
     if (!calibration) return;
     const frames = recordingRef.current;
@@ -192,17 +208,22 @@ export default function ExerciseFlow({ onComplete, onBack }: { onComplete: (sess
     </section>
     <aside className="ex-sidebar">
       <section className="ex-instruction-card"><div className="ex-card-kicker"><span className="ex-small-icon"><Hand size={17}/></span><span>{active ? 'FOLLOW THE MOVEMENT' : 'YOUR PERSONAL REFERENCE'}</span></div>
-        <div className="ex-hand-preview"><HandStage reference={previewReference} showRecorded={false} showReference={true} preview animate={!calibration} hand={hand}/><div className="ex-preview-label">{calibration ? calibration.source === 'personal' ? 'YOUR CALIBRATED TARGET' : 'CLINICIAN-PROVIDED TARGET' : 'EXERCISE DEMONSTRATION'}</div></div>
+        <div className="ex-hand-preview"><HandStage reference={previewReference} showRecorded={false} showReference={true} preview animate={!calibration} hand={hand}/><div className="ex-preview-label">{calibration ? calibration.source === 'personal' ? 'YOUR CALIBRATED TARGET' : calibration.source === 'exemplar' ? 'EXEMPLAR VIDEO TARGET' : 'CLINICIAN-PROVIDED TARGET' : 'EXERCISE DEMONSTRATION'}</div></div>
         <div className="ex-instruction-copy" aria-live="polite"><h2>{active ? phase.name : step === 'target' ? 'Find your comfortable range.' : step === 'ready' ? 'Ready when you are.' : step === 'done' ? 'A new view of your movement.' : 'Palm forward. Fingers relaxed.'}</h2><p>{active ? instructions[phase.name] : step === 'target' ? 'Slowly spread your fingers to a comfortable or prescribed range. Keep your palm facing the camera.' : step === 'ready' ? 'Follow three slow cycles: together, spread, hold, and close. Stay within your comfortable range.' : step === 'done' ? 'Explore your captured movement next to your individualized reference in the 3D studio.' : 'Sit comfortably and support your arm. Hold one hand in the guide with your fingers relatively straight and gently together.'}</p></div>
       </section>
       {!active && step !== 'done' && <section className="ex-settings-card">
         <label className="ex-field-label">Which hand are you exercising?</label><div className="ex-segmented">{(['Left','Right'] as HandSide[]).map(side => <button key={side} className={hand === side ? 'ex-selected' : ''} aria-pressed={hand === side} disabled={neutral.length > 0 || Boolean(capture)} onClick={() => { setHand(side); setConfirmed(false); }}>{side} hand {hand === side && <Check size={13}/>}</button>)}</div>
         {step === 'neutral' && <label className="ex-confirm"><input type="checkbox" disabled={Boolean(capture)} checked={confirmed} onChange={event => setConfirmed(event.target.checked)}/><span>I am showing my <strong>{hand.toLowerCase()} hand</strong> only.<small>The preview is mirrored. Confirm your physical hand.</small></span></label>}
-        <div className="ex-calibration-status"><span>{neutral.length ? <CheckCircle2 size={16}/> : <Circle size={16}/>} Neutral position</span><span>{calibration ? <CheckCircle2 size={16}/> : <Circle size={16}/>} Reference target</span></div>
+        <div className="ex-calibration-status"><span>{neutral.length ? <CheckCircle2 size={16}/> : <Circle size={16}/>} Neutral position</span><span>{calibration ? <CheckCircle2 size={16}/> : <Circle size={16}/>} Reference target · use your comfortable range</span></div>
         {(step === 'neutral' || step === 'target') && <button className="ex-primary ex-full" disabled={!detecting || !confirmed || Boolean(capture)} onClick={() => beginCapture(step)}>{capture ? <><Loader2 size={16} className="ex-spin"/> Hold steady… {Math.round(captureProgress * 100)}%</> : <><Camera size={16}/> Capture {step === 'neutral' ? 'neutral position' : 'comfortable target'}</>}</button>}
         {capture && <div className="ex-capture-progress" role="progressbar" aria-label="Stable calibration capture" aria-valuenow={Math.round(captureProgress * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${captureProgress * 100}%` }}/></div>}
         {hint && <p className="ex-hint" role="status">{hint}</p>}
-        {step === 'target' && <><button className="ex-text-button ex-clinician-toggle" onClick={() => setShowClinician(!showClinician)} aria-expanded={showClinician}>Use clinician-provided target angles</button>{showClinician && <div className="ex-clinician"><p>If you cannot voluntarily spread your fingers, a clinician-provided reference is needed for personalized comparison. Enter the prescribed angle between each pair of finger axes.</p>{['Index–middle','Middle–ring','Ring–pinky'].map((label, i) => <label key={label}>{label}<span><input aria-label={`${label} target degrees`} type="number" min="0" max="60" step="1" value={gaps[i]} placeholder="—" onChange={event => setGaps(previous => previous.map((value, j) => j === i ? event.target.value : value))}/>°</span></label>)}<button className="ex-secondary ex-full" onClick={applyClinicianTarget}>Apply prescribed target</button><small>Targets use your measured neutral hand. No neutral measurements are invented.</small></div>}</>}
+        {step === 'target' && <>
+          <label className="ex-video-reference" htmlFor="reference-video"><span><ArrowUpRight size={14}/><strong>Use a correct reference video</strong><small>Local MP4/MOV · one hand · palm facing camera</small></span><span className="ex-video-reference-button">{referenceVideoBusy ? `${Math.round(referenceVideoProgress * 100)}%` : 'Choose video'}</span></label>
+          <input id="reference-video" className="ex-visually-hidden" type="file" accept="video/*" disabled={referenceVideoBusy} onChange={event => { void importReferenceVideo(event.target.files?.[0]); event.currentTarget.value = ''; }}/>
+          <p className="ex-reference-note">This creates a candidate exemplar from the clip’s together and widest-spread poses. It is not treated as a universal “normal” hand or clinical ground truth.</p>
+          <button className="ex-text-button ex-clinician-toggle" onClick={() => setShowClinician(!showClinician)} aria-expanded={showClinician}>Use clinician-provided target angles</button>{showClinician && <div className="ex-clinician"><p>If you cannot voluntarily spread your fingers, a clinician-provided reference is needed for personalized comparison. Enter the prescribed angle between each pair of finger axes.</p>{['Index–middle','Middle–ring','Ring–pinky'].map((label, i) => <label key={label}>{label}<span><input aria-label={`${label} target degrees`} type="number" min="0" max="60" step="1" value={gaps[i]} placeholder="—" onChange={event => setGaps(previous => previous.map((value, j) => j === i ? event.target.value : value))}/>°</span></label>)}<button className="ex-secondary ex-full" onClick={applyClinicianTarget}>Apply prescribed target</button><small>Targets use your measured neutral hand. No neutral measurements are invented.</small></div>}
+        </>}
         {step === 'ready' && <><label className="ex-field-label ex-duration-label" htmlFor="ex-duration"><Timer size={14}/> Pace per repetition</label><select id="ex-duration" value={cycleDuration} onChange={event => setCycleDuration(Number(event.target.value))}><option value={6}>6 seconds · 18 seconds total</option><option value={8}>8 seconds · 24 seconds total</option><option value={10}>10 seconds · 30 seconds total</option></select><button className="ex-primary ex-full ex-start" disabled={!detecting || status !== 'ready'} onClick={() => { setCountdown(3); setStep('countdown'); }}>Start 3 repetitions <ArrowRight size={16}/></button></>}
         {neutral.length > 0 && !capture && <button className="ex-text-button ex-recalibrate" onClick={resetCalibration}><RotateCcw size={13}/> Recalibrate</button>}
       </section>}
