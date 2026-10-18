@@ -4,3 +4,8 @@
 /* Separate Movement Echoes from the calendar and saved recordings. */
 .progress-page>.sample-card{margin-top:28px;margin-bottom:32px}
 @media(min-width:700px){.progress-page>.sample-card{margin-top:36px;margin-bottom:40px}}
+
+/* A smaller flower keeps the Progress heading compact. */
+.progress-page .progress-flower{width:47px;height:73px}
+@media(min-width:700px){.progress-page .progress-flower{width:80px;height:100px}}
+@media(max-width:359px){.progress-page .progress-flower{width:32px}}
