@@ -28,7 +28,7 @@ it('puts search and exercise filters in Progress with no clinician dashboard lin
   expect(screen.getByText('Connect synced history')).toBeTruthy();
   expect(screen.queryByText('Clinician dashboard')).toBeNull();
 });
-it('allows assigned patient access to search synced history and stays searchable after opening a demo', async () => {
+it('allows assigned patient access to search synced history ', async () => {
   useClinicalAccess.setState({ access: { token: 'test', patientId: 'assigned', role: 'patient', demonstration: true } });
   mocks.request.mockResolvedValue({ status: 'empty', source: 'preset', message: 'No tracked measurements', metricLabel: 'Finger opening', evidence: [], action: null });
   render(<Progress/>);
@@ -36,19 +36,6 @@ it('allows assigned patient access to search synced history and stays searchable
   fireEvent.click(screen.getByText('Greatest finger opening'));
   await screen.findByText('No tracked measurements');
   expect(JSON.parse(mocks.request.mock.calls[0][1].body).patientId).toBe('assigned');
-  fireEvent.click(screen.getByText('Knee extension overlays'));
-  await screen.findByText('knee-demo');
-  expect(screen.getByText('No tracked measurements')).toBeTruthy();
-  fireEvent.click(screen.getByText('Back to Progress'));
-  expect(screen.getByText('No tracked measurements')).toBeTruthy();
-});
-it('loads the requested demo rather than whichever exercise was last stored', async () => {
-  render(<Progress/>);
-  fireEvent.click(screen.getByText('Finger spread overlays'));
-  await screen.findByText('finger-demo'); expect(mocks.kneeDemo).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByText('Back to Progress'));
-  fireEvent.click(screen.getByText('Knee extension overlays'));
-  await screen.findByText('knee-demo'); expect(mocks.handDemo).toHaveBeenCalledOnce();
 });
 it('refreshes synced history when an upload finishes', async () => {
   useClinicalAccess.setState({ access: { token: 'test', patientId: 'assigned', role: 'patient', demonstration: true } });

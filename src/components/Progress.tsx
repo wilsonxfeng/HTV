@@ -12,13 +12,11 @@ import type { PatientOverview, ProgressPoint, SessionRecord } from '../features/
 import { fetchEchoSessions, toEchoSession } from '../features/clinical-data/echoAdapter';
 import AccessPanel from '../features/clinical-data/components/AccessPanel';
 import { exerciseRegistry, getExercise } from '../features/body-exercises/exerciseRegistry';
-import { loadHandDemo } from '../features/movement-echoes/handDemo';
-import { loadKneeDemo } from '../features/body-exercises/bodyDemo';
 import type { EchoSession } from '../features/movement-echoes/types';
 import './progress.css';
 const MovementEchoes = lazy(() => import('../features/movement-echoes/MovementEchoes'));
 const dateLabel = (value: string) => new Date(value).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-type Viewer = { kind: 'device' | 'synced' | 'demo'; sessions?: EchoSession[]; focus?: EvidenceFocus };
+type Viewer = { kind: 'device' | 'synced'; sessions?: EchoSession[]; focus?: EvidenceFocus };
 
 export default function Progress() {
   const { sessions: localSessions, navigate } = useApp();
@@ -103,15 +101,6 @@ export default function Progress() {
     } catch (cause) { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Could not open recordings.'); }
     finally { if (!controller.signal.aborted) setBusy(false); }
   }
-  async function openDemo(kind: 'hand' | 'knee') {
-    loadController.current?.abort(); const controller = new AbortController(); loadController.current = controller;
-    setBusy(true); setError('');
-    try {
-      const loaded = await (kind === 'knee' ? loadKneeDemo : loadHandDemo)(() => {}, controller.signal);
-      if (!controller.signal.aborted) setViewer({ kind: 'demo', sessions: loaded });
-    } catch (cause) { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Demo unavailable.'); }
-    finally { if (!controller.signal.aborted) setBusy(false); }
-  }
   return <div className="progress-page content-page page-enter">
     <div className="page-heading"><h1>Progress</h1><img className="progress-flower" src="/assets/garden/stage-4.webp" alt=""/></div>
     {!viewer && <WeekCalendar sessions={localSessions}/>}
@@ -130,7 +119,7 @@ export default function Progress() {
     {(loading || busy) && <p role="status">{busy ? 'Opening recordings…' : 'Loading history…'}</p>}
     {viewer ? <Suspense fallback={<p role="status">Opening Movement Echoes…</p>}><MovementEchoes
       key={viewer.kind} sessions={viewer.sessions} initialFocusedSessionId={viewer.sessions?.[0]?.id} evidenceFocus={viewer.focus}
-      providedOnly={viewer.kind !== 'device'} cacheLocally={viewer.kind === 'demo'} backLabel="Back to Progress"
+      providedOnly={viewer.kind !== 'device'} backLabel="Back to Progress"
       onDeleted={async id => { if (localSessions.find(s => s.id === id)?.trackingMode === 'pose') await useApp.getState().remove(id); }}
       onClose={() => setViewer(null)}/></Suspense> : <>
       <section className="movement-trend panel">
@@ -150,7 +139,6 @@ export default function Progress() {
           <ArrowRight size={20}/>
         </div>) : !loading && <p>No synced recordings for this exercise and side.</p>}
       </section> : <><button className="sample-card" onClick={() => setViewer({ kind: 'device' })}><Layers size={26}/><div><h2>Movement Echoes</h2></div><ArrowRight size={21}/></button><History compact/></>}
-      <section className="progress-demos panel"><div className="section-heading"><h2>Demo videos</h2><span className="badge">DEMO</span></div><div><button className="btn btn-secondary" disabled={busy} onClick={() => void openDemo('hand')}>Finger spread overlays<ArrowRight size={18}/></button><button className="btn btn-secondary" disabled={busy} onClick={() => void openDemo('knee')}>Knee extension overlays<ArrowRight size={18}/></button></div></section>
     </>}
   </div>;
 }
