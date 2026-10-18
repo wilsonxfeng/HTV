@@ -257,7 +257,7 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
     : step === 'target' ? exercise.targetCue
     : step === 'ready' ? `Your ${calibration?.source === 'exemplar' ? 'video example' : calibration?.source === 'clinician' ? 'prescribed' : 'personal'} reference is ready. ${exercise.practiceCue} Each repetition takes ${cycleDuration} seconds. You can ask for 6, 8, or 10 seconds.`
     : step === 'countdown' ? 'Practice begins in three seconds. Stop whenever you need to.'
-    : `Repetition ${Math.min(exercise.repetitions, phase.repetition)} of ${exercise.repetitions}. ${exercise.phaseCue(phase.name) + '.'}`);
+    : `${exercise.phaseCue(phase.name)}.`);
 
   return <div className={`ex-page ex-step-${step} ex-camera-${status}`}>
     <div className="ex-heading"><div><button className="ex-back" onClick={() => { if (step === 'recording') finishRef.current(Math.min(totalDuration, (performance.now() - recordStart.current) / 1000)); stop(); onBack(); }}><ArrowLeft size={15}/> Home</button><h1 className="ex-exercise-label"><label htmlFor="exercise-choice">Exercise</label></h1><select id="exercise-choice" className="ex-exercise-choice" value={exerciseId} disabled={coachConnected || active || Boolean(capture) || referenceVideoBusy} onChange={event => { setExerciseId(event.target.value); resetCalibration(); setCycleDuration(exercises.find(item => item.id === event.target.value)?.defaultCycleDuration ?? 8); }} >{exercises.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div></div>
