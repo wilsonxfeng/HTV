@@ -12,6 +12,6 @@ export const metricCatalog = {
 export type MetricKey = keyof typeof metricCatalog;
 export interface SearchIntent { type: 'find_extreme' | 'compare_sessions' | 'find_recent' | 'unsupported'; metricKey: MetricKey; aggregation: 'min' | 'max' | 'first' | 'latest'; side: 'Left' | 'Right' }
 export type SearchPreset = 'greatest-finger' | 'first-latest-finger' | 'smallest-knee';
-export interface Evidence { side: 'Left' | 'Right'; sessionId: string; repetitionIndex: number | null; timestampMs: number | null; recordedAt: string; exerciseId: string; metricKey: MetricKey; metricValue: number; metricUnit: string; qualityStatus: string; playable: boolean }
+export interface Evidence { side: 'Left' | 'Right' | 'Unconfirmed'; sessionId: string; repetitionIndex: number | null; timestampMs: number | null; recordedAt: string; exerciseId: string; metricKey: MetricKey; metricValue: number; metricUnit: string; qualityStatus: string; playable: boolean }
 export interface SearchResult { status: 'ok' | 'empty' | 'unsupported'; source: 'preset' | 'gemini'; message: string; metricLabel: string; evidence: Evidence[]; action: { type: 'focus_session' | 'compare_sessions'; sessionIds: string[]; pause: true } | null }
 export interface EvidenceFocus { sessionId: string; timestampMs: number | null; repetitionIndex: number | null; token: number }

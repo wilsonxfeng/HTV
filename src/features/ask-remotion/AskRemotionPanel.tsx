@@ -1,26 +1,50 @@
 import { useEffect, useRef, useState } from 'react';
-import { getExercise } from '../body-exercises/exerciseRegistry';
 import { clinicalRepository } from '../clinical-data/access';
+import type { EchoSession } from '../movement-echoes/types';
 import type { Evidence, SearchPreset, SearchResult } from './contracts';
+import { clientReply, GREATEST_FINGER_QUESTION, isGreatestFingerQuestion, searchRecordings } from './localSearch';
 import './ask-remotion.css';
-const suggestions: {preset:SearchPreset;label:string}[] = [{preset:'greatest-finger',label:'Greatest finger opening'},{preset:'first-latest-finger',label:'First vs. latest finger opening'},{preset:'smallest-knee',label:'Smallest knee-extension range'}];
-export default function AskRemotionPanel({patientId,exerciseId,side,onOpen,enabled=true}:{enabled?:boolean;patientId:string;exerciseId:string;side:'Left'|'Right';onOpen:(evidence:Evidence[],signal:AbortSignal)=>Promise<void>}) {
-  const [question,setQuestion]=useState(''),[result,setResult]=useState<SearchResult|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState('');
-  const [context,setContext]=useState({exerciseId,side});
-  const controller=useRef<AbortController|null>(null);
-  useEffect(()=>{controller.current?.abort();setResult(null);setError('');setBusy('');setContext({exerciseId,side});return()=>controller.current?.abort();},[patientId,exerciseId,side,enabled]);
-  async function open(evidence:Evidence[],signal:AbortSignal) {if(signal.aborted)return;setBusy('Opening recording…');await onOpen(evidence,signal);}
-  async function search(preset?:SearchPreset) {
-    if(!enabled)return;
-    controller.current?.abort();const next=new AbortController();controller.current=next;setError('');setResult(null);setBusy('Searching movement history…');
+const suggestions: { preset: SearchPreset; label: string }[] = [
+  { preset: 'greatest-finger', label: 'Greatest finger opening' },
+  { preset: 'first-latest-finger', label: 'First vs. latest finger opening' },
+  { preset: 'smallest-knee', label: 'Smallest knee-extension range' },
+];
+interface Props {
+  patientId?: string; exerciseId: string; side: EchoSession['selectedHand'];
+  recordings?: EchoSession[]; focusId?: string;
+  onOpen: (evidence: Evidence[], signal: AbortSignal) => Promise<void>;
+}
+export default function AskRemotionPanel({ patientId, exerciseId, side, recordings = [], focusId = '', onOpen }: Props) {
+  const [question, setQuestion] = useState(''), [reply, setReply] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  const controller = useRef<AbortController | null>(null);
+  // Focusing a search result must not reset the reply or cancel its navigation.
+  useEffect(() => { controller.current?.abort(); setReply(''); setError(''); setBusy(false); return () => controller.current?.abort(); }, [patientId]);
+  async function search(preset?: SearchPreset) {
+    controller.current?.abort(); const next = new AbortController(); controller.current = next;
+    setError(''); setReply(''); setBusy(true);
+    const selectedPreset = preset ?? (isGreatestFingerQuestion(question) ? 'greatest-finger' : undefined);
     try {
-      const response=await clinicalRepository.request<SearchResult>('/api/ask-remotion',{method:'POST',signal:next.signal,body:JSON.stringify({patientId,question:preset?suggestions.find(s=>s.preset===preset)!.label:question,exerciseContext:context,...(preset?{preset}:{})})});
-      if(next.signal.aborted)return;setResult(response);
-      if(response.evidence[0])setContext({exerciseId:response.evidence[0].exerciseId,side:response.evidence[0].side});
-      if(response.evidence.length===1 && response.evidence[0].playable) await open(response.evidence,next.signal);
-    } catch(cause) {if(!next.signal.aborted)setError(cause instanceof Error?cause.message:'Search unavailable.');}
-    finally {if(!next.signal.aborted)setBusy('');}
+      let response: SearchResult;
+      if (patientId && side !== 'Unconfirmed') {
+        response = await clinicalRepository.request<SearchResult>('/api/ask-remotion', { method: 'POST', signal: next.signal,
+          body: JSON.stringify({ patientId, question: selectedPreset === 'greatest-finger' ? GREATEST_FINGER_QUESTION : selectedPreset ? suggestions.find(s => s.preset === selectedPreset)!.label : question, exerciseContext: { exerciseId, side }, ...(selectedPreset ? { preset: selectedPreset } : {}) }) });
+      } else if (selectedPreset) response = searchRecordings(recordings, focusId, selectedPreset);
+      else { setReply('Try one of the questions below to explore these recordings.'); return; }
+      if (next.signal.aborted) return;
+      if (response.evidence.length && response.evidence.every(e => e.playable)) await onOpen(response.evidence, next.signal);
+      if (!next.signal.aborted) setReply(clientReply(response, selectedPreset));
+    } catch (cause) { if (!next.signal.aborted) setError(cause instanceof Error ? cause.message : 'That recording could not be opened. Try again.'); }
+    finally { if (!next.signal.aborted) setBusy(false); }
   }
-  async function view(evidence:Evidence[]) {controller.current?.abort();const next=new AbortController();controller.current=next;setError('');try{await open(evidence,next.signal);}catch(cause){if(!next.signal.aborted)setError(cause instanceof Error?cause.message:'Recording unavailable.');}finally{if(!next.signal.aborted)setBusy('');}}
-  return <section className="ask-remotion" aria-label="Ask ReMotion"><div><h2>Ask ReMotion</h2></div>{!enabled&&<p>Connect synced history to search recordings.</p>}<form onSubmit={event=>{event.preventDefault();void search();}}><label htmlFor="ask-remotion-question">Ask about recorded movements</label><div className="ask-remotion-input"><input id="ask-remotion-question" disabled={!enabled} value={question} maxLength={1000} onChange={e=>setQuestion(e.target.value)} placeholder="Ask about movement history…"/><button disabled={!enabled||!question.trim()} type="submit">Search</button></div></form><div className="ask-remotion-suggestions">{suggestions.map(s=><button key={s.preset} disabled={!enabled} onClick={()=>void search(s.preset)}>{s.label}</button>)}</div>{busy&&<p role="status">{busy}</p>}{error&&<p role="alert">{error}</p>}{result&&<div aria-live="polite"><small>{result.source==='gemini'?'Gemini interpreted your question':'Suggested search'}</small><p>{result.message}</p><small>{result.metricLabel}</small><div className="ask-remotion-evidence">{result.evidence.map(e=><article key={e.sessionId}><strong>{new Date(e.recordedAt).toLocaleString()}</strong><p>{e.metricValue.toFixed(1)}{e.metricUnit} · {e.qualityStatus}</p><p>{e.repetitionIndex===null?'Session measurement':`Repetition ${e.repetitionIndex+1}`} · {e.timestampMs===null?'Exact timestamp unavailable':`${(e.timestampMs/1000).toFixed(2)}s`}</p><button disabled={!e.playable} onClick={()=>void view([e])}>{e.playable?'View recording':'No recording available'}</button></article>)}</div>{result.evidence.length===2&&<button disabled={result.evidence.some(e=>!e.playable)} onClick={()=>void view(result.evidence)}>Compare in Movement Echoes</button>}</div>}<small>{context.side} side · {getExercise(context.exerciseId).title} · Recorded camera estimates</small></section>;
+  return <section className="ask-remotion" aria-label="Ask ReMotion">
+    <h2>Ask ReMotion</h2>
+    <form onSubmit={event => { event.preventDefault(); void search(); }}>
+      <label className="echo-sr-only" htmlFor="ask-remotion-question">Ask about recorded movements</label>
+      <div className="ask-remotion-input"><input id="ask-remotion-question" value={question} maxLength={1000} onChange={e => setQuestion(e.target.value)} placeholder="Ask about a recording…"/><button disabled={!question.trim()} type="submit">Ask</button></div>
+    </form>
+    <div className="ask-remotion-suggestions">{suggestions.filter(s => s.preset === 'smallest-knee' ? exerciseId === 'seated-knee-extension' : exerciseId === 'finger-spread-close').map(s => <button key={s.preset} aria-label={s.preset === 'greatest-finger' ? GREATEST_FINGER_QUESTION : s.preset === 'first-latest-finger' ? 'Compare first and latest' : 'Find smallest knee movement'} onClick={() => void search(s.preset)}>{s.label}</button>)}</div>
+    {busy && <p role="status">Finding your recording…</p>}
+    {error && <p role="alert">{error}</p>}
+    {reply && <p className="ask-remotion-reply" role="status">{reply}</p>}
+  </section>;
 }

@@ -49,11 +49,11 @@ Local and cloud copies are separate. **Remove local copy** removes only the Inde
 
 ## Progress and Movement Echoes
 
-Progress is the single review screen. It shows exercise/side filters, actual local or synced measurements grouped by reference, recording history, Ask ReMotion, and hand/body overlays. A scoped patient token supports both recording and searching their own history; clinician tokens retain assigned read access. The former clinician dashboard and standalone entry have been removed. See [the demo recording plan](../docs/PROGRESS_DEMO_PLAN.md).
+Progress is the single review screen. It shows exercise/side filters and local or synced recording history. Opening Movement Echoes provides Ask ReMotion and hand/body overlays; numeric measurements stay internal. A scoped patient token supports both recording and searching their own history; clinician tokens retain assigned read access. The former clinician dashboard and standalone entry have been removed. See [the demo recording plan](../docs/PROGRESS_DEMO_PLAN.md).
 
 Session replay downloads the stored video through an authorized five-minute link. Cycle peaks and differences seek using the stored video/landmark clock offset. Select 2–4 compatible sessions to launch the existing Movement Echoes renderer. Its new `providedOnly` integration mode excludes unrelated browser clips, hides local import/delete/marker editing, and keeps extracted images in memory instead of IndexedDB. Closing the viewer releases that component’s video URLs and images.
 
-Grounded Gemini reports are still generated after successful uploads through the existing report API. The Progress UI uses Ask ReMotion for evidence search. Reports remain available through the API; the old dashboard report/print interface has been removed.
+Grounded Gemini reports are still generated after successful uploads through the existing report API. Movement Echoes uses Ask ReMotion for evidence search. Reports remain available through the API; the old dashboard report/print interface has been removed.
 
 ## Verification
 

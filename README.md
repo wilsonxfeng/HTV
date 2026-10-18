@@ -89,7 +89,7 @@ The model comes from [Google's MediaPipe model distribution](https://storage.goo
 
 ## Garden mobile interface
 
-The Home, Practice, Garden and Progress tabs are designed for phone screens, with a warm cream/green palette and original local gouache artwork. Motion Studio still renders interactive estimated 3D landmarks. Measurement details are expandable, and Progress includes session history, comparison, exports Ask ReMotion, synced history, and hand/body overlays.
+The Home, Practice, Garden and Progress tabs are designed for phone screens, with a warm cream/green palette and original local gouache artwork. Motion Studio still renders interactive estimated 3D landmarks. Measurement details are expandable, and Progress includes session history, comparison, exports synced history and hand/body overlays with Ask ReMotion inside Movement Echoes.
 
 Garden growth is derived from completed camera recordings in the existing IndexedDB database. Each completed camera practice session grows one flower, including separate sessions on the same day. Samples, partial sessions and duplicate saves do not contribute. Extra repetitions within a session do not earn additional flowers. Rest days never remove flowers. Deleting the underlying recordings or clearing browser storage changes the derived garden. No schema migration is required; completed legacy recordings remain supported.
 

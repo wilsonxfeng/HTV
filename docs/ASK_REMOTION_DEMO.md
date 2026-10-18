@@ -1,28 +1,19 @@
-# Ask ReMotion rehearsal
+# Ask ReMotion in Movement Echoes
 
-Start the existing API and frontend (`npm run api:dev`, `npm run dev`); for fictional local data use the existing `npm run api:demo:seed` (ffmpeg required). Open Progress and connect synced history with the participant’s assigned patient token. Choose an authorized patient and the correct side. Use at least two completed, adequately tracked finger sessions with compatible calibration/viewpoint/version, and one knee-extension session if demonstrating knee range. No data means a truthful empty result.
+Open **Progress → Demo videos → Finger spread overlays**. Ask ReMotion is inside Movement Echoes, alongside the recordings it controls.
 
-## 30-second sequence
+Ask or click **Which session had the greatest recorded finger opening?** The fixed client reply is:
 
-1. Ask **“Which session had the greatest recorded finger opening?”** or click **Greatest finger opening**. The button uses the deterministic preset and works without Gemini; typed questions require configured Gemini. Point to the named mean separation metric, actual date, repetition and value. The actual recording opens in Movement Echoes at its stored peak timestamp, paused.
-2. Ask **“How has the patient’s finger opening changed since their first session?”** or click **First vs. latest finger opening**. Show the two evidence cards and measured difference. Click **Compare in Movement Echoes**, then **Overlay Sessions** to show recorded ghosts. Each session is represented by its greatest valid repetition peak, within a compatible cohort. Say “recorded difference,” not recovery or clinical improvement.
-3. Optional: ask **“Show me the session with the smallest knee-extension range.”** or click **Smallest knee-extension range**. This queries knee range, never finger data. Explain that range is a whole-session measurement: no exact event timestamp is stored, so the original video opens paused at its beginning and the UI says the timestamp is unavailable.
+> Absolutely! This session had the greatest recorded finger separation. I’ve brought it into focus for you.
 
-## Useful extra questions
+The matching clip becomes the original full-color video and pauses at its actual stored peak. The reply wording is scripted; the winner is selected from measured data, not hard-coded by filename. In the supplied footage, `high ROM.mov` has a greater measured peak than `higher ROM.mov`. Static holds, invalid repetitions and poorly tracked clips are excluded. Degree values, tracking percentages and technical measurement cards are not shown in the client.
 
-- “Show the latest finger-opening session.”
-- “Which session had the greatest index–middle hold angle?” (session aggregate; timestamp unavailable)
-- “Which session had the greatest recorded knee angle?” (maximum angle, distinct from range)
-- “Compare the first and latest bicep-curl range.”
+The exact typed question, including an accidental leading asterisk, uses the same deterministic search as the suggestion. It does not call Gemini. With local clips it runs entirely on this device. Local searches only describe compatible recordings loaded into this Echoes view; they do not search other people's or cloud records.
 
-Questions such as “Is this patient recovering?” or “What treatment should they do?” are unsupported. If interpretation is unavailable, use one of the three suggested searches; the UI explicitly labels it a suggested deterministic query. Do not claim Gemini is active when using that fallback.
+**Compare first and latest** automatically opens the compatible first and latest sessions. Click **Overlay Sessions** to reveal their recorded silhouettes. The response and existing overlay settings remain available while changing the focused recording. **Find smallest knee movement** searches the local knee set when that exercise is open. Its whole-session range is computed internally; the original video starts at the beginning rather than an invented event timestamp.
 
-## Before presenting
+For synced history, connect access in Progress and open a recording or select recordings to compare. The viewer receives the selected patient's scoped search context. Suggested searches and the exact scripted question query that patient's authorized history, loading an additional winning recording if needed. Other typed questions use the existing Gemini interpreter. A missing video or loading error does not claim that it was brought into focus.
 
-Check patient/side, two compatible finger recordings, ≥80% tracking, playable signed video, Gemini model access if typing questions, and original recording decode. If the backend has only knee data, demonstrate knee range honestly; do not use mock finger answers. Existing local knee demo mode is separate from the authenticated shared-history search.
+There are no numeric result cards, measurement panels, degree charts, or extraction diagnostics in the client flow. Dates still identify recordings; controls for playback, overlay visibility, opacity and selecting cycles remain.
 
-Close Movement Echoes to return to Progress. Search remains available while viewing echoes, and loaded recordings/overlay settings persist across searches. New searches cancel stale navigation.
-
-Verification: 141 automated tests passed in the final full regression. Backend TypeScript and production app, clinician, Movement Echoes and voice builds passed. Real browser verification passed on existing team knee footage with a temporary embedded PostgreSQL API; live Gemini and remote TigerData/R2 were not exercised.
-
-For the current filming checklist and live presentation order, see [Progress demo plan](PROGRESS_DEMO_PLAN.md).
+For preparing new footage and the presentation sequence, see [the filming checklist](PROGRESS_DEMO_PLAN.md).

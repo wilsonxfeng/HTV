@@ -1,6 +1,5 @@
 import type { EvidenceFocus } from '../ask-remotion/contracts';
 import { baselineAnchors } from '../body-echoes/bodyAlignment';
-import { getExercise } from '../body-exercises/exerciseRegistry';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause, Play, RotateCcw, ScanLine } from 'lucide-react';
 import { frameAtTime, palmAnchors, phaseToTime, timeToPhase } from './geometry';
@@ -320,8 +319,6 @@ export default function EchoViewer({
       }
     }
   };
-  const elapsed = rep ? (phaseToTime(phase, rep) - rep.startMs) / 1000 : 0,
-    total = rep ? (rep.endMs - rep.startMs) / 1000 : 0;
   const peakFrame = rep
     ? frameAtTime(focus.frames, rep.peakMs - focus.landmarkOffsetMs)
     : null;
@@ -461,18 +458,6 @@ export default function EchoViewer({
             disabled={!rep || rep.static || loading}
             onChange={(e) => seek(Number(e.target.value))}
           />
-          <div>
-            <span>
-              {elapsed.toFixed(1)} / {total.toFixed(1)}s
-            </span>
-            <span>
-              {phase < 0.46
-                ? focus.trackingMode === 'pose' ? 'Moving' : 'Opening'
-                : phase > 0.54
-                  ? focus.trackingMode === 'pose' ? 'Returning' : 'Closing'
-                  : focus.trackingMode === 'pose' ? 'Peak movement' : 'Peak spread'}
-            </span>
-          </div>
         </div>
         <select
           aria-label="Playback speed"
@@ -497,9 +482,8 @@ export default function EchoViewer({
         Pause at peak {focus.trackingMode === 'pose' ? 'movement' : 'spread'}
       </button>
       <p className="echo-alignment" role="status">
-        {status ||
-          (focus.trackingMode === 'pose' ? `Aligned to the seated baseline · ${getExercise(focus.exerciseId).title}` : 'Aligned at the palm. Recorded finger positions stay unchanged.')}
-        {reduced && ' Showing two ghosts to keep playback responsive.'}
+        {status || 'Aligned at the palm. Recorded finger positions stay unchanged.'}
+        {reduced && ' Showing fewer overlays to keep playback responsive.'}
       </p>
     </section>
   );

@@ -1,5 +1,7 @@
-import type { EvidenceFocus } from '../ask-remotion/contracts';
-import { getExercise } from '../body-exercises/exerciseRegistry';
+import AskRemotionPanel from '../ask-remotion/AskRemotionPanel';
+import { fetchEchoSessions, toEchoSession } from '../clinical-data/echoAdapter';
+import { clinicalRepository } from '../clinical-data/access';
+import type { Evidence, EvidenceFocus } from '../ask-remotion/contracts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Layers, RefreshCw, Trash2 } from 'lucide-react';
 import EchoViewer from './EchoViewer';
@@ -18,6 +20,7 @@ import './echoes.css';
 export interface MovementEchoesProps {
   sessions?: EchoSession[];
   evidenceFocus?: EvidenceFocus;
+  searchPatientId?: string;
   initialFocusedSessionId?: string;
   onClose?: () => void;
   /** Delete matching host history only if that host explicitly linked a video. */
@@ -31,13 +34,17 @@ export interface MovementEchoesProps {
 export default function MovementEchoes({
   sessions: provided = [],
   initialFocusedSessionId,
-  evidenceFocus,
+  evidenceFocus: suppliedEvidenceFocus,
+  searchPatientId,
   onClose,
   onDeleted,
   providedOnly = false,
   cacheLocally = false,
   backLabel,
 }: MovementEchoesProps) {
+  const [evidenceFocus, setEvidenceFocus] = useState(suppliedEvidenceFocus);
+  const focusToken = useRef(0);
+  useEffect(() => setEvidenceFocus(suppliedEvidenceFocus), [suppliedEvidenceFocus]);
   const [sessions, setSessions] = useState<EchoSession[]>([]),
     [focusId, setFocusId] = useState(initialFocusedSessionId ?? ''),
     [ready, setReady] = useState(false);
@@ -50,9 +57,9 @@ export default function MovementEchoes({
     [error, setError] = useState('');
   const [config, setConfig] = useState(DEFAULT_CONFIG),
     [retry, setRetry] = useState(0),
-    [overlay, setOverlay] = useState(false),
+    [limit, setLimit] = useState(5);
+  const [overlay, setOverlay] = useState(false),
     [opacity, setOpacity] = useState(0.3),
-    [limit, setLimit] = useState(3),
     [reveal, setReveal] = useState(0),
     [revealed, setRevealed] = useState(5),
     [enabled, setEnabled] = useState<Record<string, boolean>>({});
@@ -166,15 +173,16 @@ export default function MovementEchoes({
         : [],
     [focus, sessions],
   );
+  const maxGhosts = focus?.trackingMode === 'pose' ? 3 : 5;
   const ghosts = useMemo(
     () =>
       overlay
         ? comparison
             .filter((s) => enabled[s.id] !== false)
-            .slice(0, Math.min(limit, revealed))
+            .slice(0, Math.min(limit, maxGhosts, revealed))
             .map((s) => s.id)
         : [],
-    [comparison, enabled, limit, overlay, revealed],
+    [comparison, enabled, limit, maxGhosts, overlay, revealed],
   );
   const saveImported = async (
     blob: Blob,
@@ -295,16 +303,16 @@ export default function MovementEchoes({
     setSideBySide(false);
     revealTimers.current.forEach(clearTimeout);
     setOverlay(true);
-    setLimit(focus?.trackingMode === 'pose' ? 3 : 5);
+    setLimit(maxGhosts);
     setOpacity(comparison.length > 1 ? .2 : .3);
     setEnabled({});
     setRevealed(0);
     setReveal((v) => v + 1);
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     if (reduced) setRevealed(5);
     else
       comparison
-        .slice(0, 5)
+        .slice(0, limit)
         .forEach((_, i) =>
           revealTimers.current.push(
             setTimeout(() => setRevealed(i + 1), i * 230 + 50),
@@ -327,7 +335,22 @@ export default function MovementEchoes({
       setError('The recording could not be fully deleted. Retry the deletion.');
     }
   };
-  const selectedRep = focus?.repetitions[repChoices[focus.id] ?? 0];
+  async function openEvidence(evidence: Evidence[], signal: AbortSignal) {
+    let loaded = sessions.filter(s => evidence.some(e => e.sessionId === s.id));
+    if (loaded.length !== evidence.length) {
+      if (!searchPatientId) throw Error('This recording is no longer available.');
+      if (evidence.length === 1) {
+        const detail = await clinicalRepository.detail(evidence[0].sessionId, signal);
+        if (detail.patientId !== searchPatientId) throw Error('This recording is not in the selected history.');
+        loaded = [toEchoSession(detail, await clinicalRepository.video(detail.id, signal))];
+      } else loaded = await fetchEchoSessions(clinicalRepository, evidence.map(e => e.sessionId), signal);
+    }
+    if (signal.aborted || !evidence.length) return;
+    setSessions(current => { const additions = loaded.filter(s => !current.some(existing => existing.id === s.id)); return additions.length ? [...current, ...additions] : current; });
+    setRepChoices(current => { const missing = loaded.filter(s => current[s.id] === undefined); return missing.length ? { ...current, ...Object.fromEntries(missing.map(s => [s.id, representativeRep(s.repetitions)])) } : current; });
+    setEvidenceFocus({ ...evidence[0], token: ++focusToken.current });
+    setSideBySide(false);
+  }
   const validCounts = (id: string) => {
     const c = caches[id];
     return c
@@ -408,14 +431,8 @@ export default function MovementEchoes({
           </p>
         </section>
       ) : null}
-      {evidenceFocus && evidenceFocus.sessionId===focusId && <p className="echo-notice" role="status">Search evidence · {evidenceFocus.timestampMs===null?'Session measurement; exact timestamp unavailable.':`Recorded event at ${(evidenceFocus.timestampMs/1000).toFixed(2)}s · Repetition ${(evidenceFocus.repetitionIndex??0)+1}`}</p>}
       {focus && (
         <>
-          <div className="echo-demo-banner">
-            {providedOnly ? focus.demonstration ? 'Demo footage · Not a recovery history.' : cacheLocally ? 'Local recording' : 'Authorized patient recordings' : focus.demonstration
-              ? 'Supplied demonstration footage · The filenames describe intended ranges, not measured progress. Physical left/right hand identity is unconfirmed.'
-              : 'Compare the same exercise, side and camera view.'}
-          </div>
           <div className="echo-layout">
             <div className="echo-main">
               <div className="echo-view-top">
@@ -461,8 +478,6 @@ export default function MovementEchoes({
                   opacity={opacity}
                   onFocus={(id) => {
                     setFocusId(id);
-                    setMarkers(false);
-                    setInspecting(false);
                   }}
                   revealToken={reveal}
                 />
@@ -489,11 +504,6 @@ export default function MovementEchoes({
                     ))}
                   </select>
                 </label>
-                <span>
-                  {selectedRep?.coverage !== undefined
-                    ? `${Math.round(selectedRep.coverage * 100)}% tracked samples`
-                    : ''}
-                </span>
               </div>
               <section className="echo-session-section">
                 <div className="echo-section-heading">
@@ -512,8 +522,6 @@ export default function MovementEchoes({
                       aria-pressed={s.id === focus.id}
                       onClick={() => {
                         setFocusId(s.id);
-                        setMarkers(false);
-                        setInspecting(false);
                       }}
                     >
                       <i
@@ -622,44 +630,9 @@ export default function MovementEchoes({
                       );
                     })}
                 </div>
-                <p className="echo-note">
-                  {focus.trackingMode === 'pose' ? 'Aligned once to the seated baseline. Limb shapes and movement stay unchanged.' : 'Only the palm is aligned. Every finger keeps its recorded shape and position.'}
-                </p>
-              </section>
-              <section className="echo-metrics">
-                <p className="echo-eyebrow">RECORDED MOVEMENT</p>
-                <h2>
-                  {getExercise(focus.exerciseId).experimental ? 'Video only' : selectedRep ? `${selectedRep.peakSpread.toFixed(1)}°` : '—'}
-                  <span>
-                    {selectedRep?.static
-                      ? 'at the selected still pose'
-                      : 'at this repetition’s peak'}
-                  </span>
-                </h2>
-                <p>
-                  {focus.trackingMode === 'pose' ? `${getExercise(focus.exerciseId).peakLabel} · Camera estimate` : 'Mean finger-axis separation, estimated in 3D.'}
-                </p>
-                {comparison[0] && selectedRep && !getExercise(focus.exerciseId).experimental && (
-                  <p className="echo-difference">
-                    {comparison[0].name.replace('.mov', '')}:{' '}
-                    {comparison[0].repetitions[
-                      repChoices[comparison[0].id] ?? 0
-                    ]?.peakSpread.toFixed(1) ?? '—'}
-                    ° at its selected{' '}
-                    {comparison[0].repetitions[
-                      repChoices[comparison[0].id] ?? 0
-                    ]?.static
-                      ? 'still pose'
-                      : 'peak'}
-                    .
-                  </p>
-                )}
-                <p className="echo-note">
-                  One selected cycle or still pose per recording. These
-                  differences do not measure clinical recovery.
-                </p>
               </section>
             </aside>
+            <AskRemotionPanel patientId={searchPatientId} exerciseId={focus.exerciseId} side={focus.selectedHand} recordings={sessions} focusId={focus.id} onOpen={openEvidence}/>
           </div>
           <details
             className="echo-details"
@@ -788,6 +761,7 @@ export default function MovementEchoes({
     </div>
   );
 }
+
 function QualityPreview({ cache }: { cache?: GhostCache }) {
   const [url, setUrl] = useState('');
   const frame = cache?.frames.reduce<(typeof cache.frames)[number] | undefined>(

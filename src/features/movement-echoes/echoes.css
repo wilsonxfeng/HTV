@@ -948,3 +948,6 @@
     grid-template-columns: 1fr;
   }
 }
+/* Keep the answer beside the recording it focuses. */
+.echo-layout{grid-template-areas:"main ask" "main controls";grid-template-rows:auto 1fr}.echo-main{grid-area:main}.echo-layout>.ask-remotion{grid-area:ask;margin:0;padding:20px}.echo-layout>.echo-sidebar{grid-area:controls;display:block}.echo-layout>.ask-remotion .ask-remotion-input{flex-direction:column}.echo-layout>.ask-remotion .ask-remotion-suggestions button{text-align:left}
+@media(max-width:1000px){.echo-layout{grid-template-areas:"ask" "main" "controls";grid-template-rows:auto}.echo-layout>.ask-remotion .ask-remotion-input{flex-direction:row}.echo-layout>.ask-remotion{padding:18px}}
