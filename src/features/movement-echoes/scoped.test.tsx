@@ -16,7 +16,7 @@ describe('authorized remote comparison scope',()=>{
   it('uses only provided sessions and excludes local import, editing and deletion',async()=>{
     await act(async()=>{render(<MovementEchoes providedOnly sessions={[clip('authorized-a'),clip('authorized-b')]}/>);});
     expect(mock.list).not.toHaveBeenCalled();
-    expect(document.querySelectorAll('.echo-session-chips button')).toHaveLength(2);
+    expect(document.querySelectorAll('#echo-recording-choice option')).toHaveLength(2);
     expect(screen.queryByText('Add a recording')).toBeNull();
     expect(screen.queryByText('Delete this local recording')).toBeNull();
     expect(screen.queryByText('Original video and manual phase markers')).toBeNull();
@@ -32,8 +32,8 @@ describe('authorized remote comparison scope',()=>{
     fireEvent.click(overlay);expect(overlay.checked).toBe(true);
     await act(async()=>{view.rerender(<MovementEchoes {...props} sessions={[first,second,third]} evidenceFocus={{sessionId:third.id,repetitionIndex:null,timestampMs:null,token:1}}/>);});
     expect((screen.getByRole('checkbox',{name:'Show past sessions'}) as HTMLInputElement).checked).toBe(true);
-    const chips=[...document.querySelectorAll('.echo-session-chips button')];expect(chips).toHaveLength(3);
-    expect(chips.find(c=>c.textContent?.includes('authorized-c'))?.getAttribute('aria-pressed')).toBe('true');
+    const chips=[...document.querySelectorAll('#echo-recording-choice option')];expect(chips).toHaveLength(3);
+    expect((screen.getByLabelText('Choose a recording') as HTMLSelectElement).value).toBe('authorized-c');
   });
 
 });
@@ -53,12 +53,12 @@ it('submits chat with Enter and focuses the returned recording without expanding
  await waitFor(() => expect(mock.viewer.mock.lastCall?.[0].focusId).toBe(b.id));
  const props=mock.viewer.mock.lastCall?.[0];
  expect(props).toMatchObject({focusId:b.id,evidenceFocus:{sessionId:b.id,timestampMs:4000,repetitionIndex:0}});
- expect(document.querySelector('.echo-session-chips button.selected')?.textContent).toContain('winner');
+ expect((screen.getByLabelText('Choose a recording') as HTMLSelectElement).value).toBe('winner');
  expect(view.container.querySelector('.ask-remotion')?.textContent).not.toMatch(/°|%|Recorded movement|tracked samples|reliable outline samples/);
- expect(view.container.querySelector('.echo-session-section')?.hasAttribute('open')).toBe(false);
+ expect(screen.getByRole('combobox', {name:'Choose a recording'})).toBeTruthy();
  expect(view.container.querySelector('.echo-control-card')?.hasAttribute('open')).toBe(false);
  // A second ask after manually selecting another clip focuses and pauses the result again.
- fireEvent.click([...document.querySelectorAll('.echo-session-chips button')].find(button=>button.textContent?.includes('ordinary'))!);
+ fireEvent.change(screen.getByLabelText('Choose a recording'),{target:{value:'ordinary'}});
  fireEvent.change(screen.getByLabelText('Ask about recorded movements'),{target:{value:GREATEST_FINGER_QUESTION}});
  fireEvent.keyDown(screen.getByLabelText('Ask about recorded movements'),{key:'Enter'});
  await act(async()=>{});

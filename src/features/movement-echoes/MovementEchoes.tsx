@@ -27,6 +27,7 @@ export interface MovementEchoesProps {
   onDeleted?: (id: string) => void | Promise<void>;
   /** Authorized remote selection only: no browser recording merge or persistent image cache. */
   providedOnly?: boolean;
+  hideManagementTools?: boolean;
   /** Opt-in only for locally captured body video, never remote patient images. */
   cacheLocally?: boolean;
   backLabel?: string;
@@ -39,6 +40,7 @@ export default function MovementEchoes({
   onClose,
   onDeleted,
   providedOnly = false,
+  hideManagementTools = false,
   cacheLocally = false,
   backLabel,
 }: MovementEchoesProps) {
@@ -416,25 +418,6 @@ export default function MovementEchoes({
         <>
           <div className="echo-layout">
             <div className="echo-main">
-              <div className="echo-view-top">
-                <button
-                  className="echo-button echo-primary"
-                  disabled={!comparison.length}
-                  onClick={overlayWeek}
-                >
-                  <Layers size={20} />
-                  Overlay Sessions
-                </button>
-                <button
-                  className="echo-text-button"
-                  disabled={!comparison.length}
-                  onClick={() => setSideBySide((v) => !v)}
-                >
-                  {sideBySide
-                    ? 'Return to overlays'
-                    : 'Side by side'}
-                </button>
-              </div>
               {sideBySide ? (
                 <SideBySide
                   focus={focus}
@@ -456,61 +439,32 @@ export default function MovementEchoes({
                   revealToken={reveal}
                 />
               )}
-              <div className="echo-repeat-row">
-                <label>
-                  Repetition
-                  <select
-                    aria-label="Focused repetition"
-                    value={repChoices[focus.id] ?? 0}
-                    onChange={(e) =>
-                      setRepChoices((r) => ({
-                        ...r,
-                        [focus.id]: Number(e.target.value),
-                      }))
-                    }
-                  >
-                    {focus.repetitions.map((rep, i) => (
-                      <option key={i} value={i}>
-                        {rep.static
-                          ? 'Static pose'
-                          : `Repetition ${i + 1}${rep.manual ? ' · manual markers' : ''}`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <details className="echo-session-section echo-disclosure">
-                <summary><h2>Choose a recording</h2><ChevronDown size={20} /></summary>
-                <div
-                  className="echo-session-chips"
-                  role="group"
-                  aria-label="Focused recording"
-                >
-                  {sessions.map((s, i) => (
-                    <button
-                      key={s.id}
-                      className={s.id === focus.id ? 'selected' : ''}
-                      aria-pressed={s.id === focus.id}
-                      onClick={() => {
-                        setFocusId(s.id);
-                      }}
-                    >
-                      <i
-                        style={{
-                          background: ECHO_COLORS[i % ECHO_COLORS.length],
-                        }}
-                      />
-                      <span>
-                        {s.name.replace(/\.(mov|mp4|webm)$/i, '')}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </details>
+              <AskRemotionPanel patientId={searchPatientId} exerciseId={focus.exerciseId} side={focus.selectedHand} recordings={sessions} focusId={focus.id} onOpen={openEvidence}/>
             </div>
             <aside className="echo-sidebar">
-              <details className="echo-control-card echo-disclosure">
-                <summary><h2>Your echoes</h2><ChevronDown size={20} /></summary>
+              <div className="echo-view-top">
+                <button
+                  className="echo-button echo-primary"
+                  disabled={!comparison.length}
+                  onClick={overlayWeek}
+                >
+                  <Layers size={20} />
+                  Overlay Sessions
+                </button>
+                <button
+                  className="echo-button echo-primary"
+                  disabled={!comparison.length}
+                  onClick={() => setSideBySide((v) => !v)}
+                >
+                  {sideBySide
+                    ? 'Return to overlays'
+                    : 'Side by side'}
+                </button>
+              </div>
+
+              <section className="echo-recording-picker"><label htmlFor="echo-recording-choice">Choose a recording</label><div className="echo-recording-select"><select id="echo-recording-choice" value={focus.id} onChange={event => setFocusId(event.target.value)}>{sessions.map(session => <option key={session.id} value={session.id}>{session.name.replace(/\.(mov|mp4|webm)$/i, '')}</option>)}</select><ChevronDown size={20} aria-hidden="true"/></div></section>
+              <section className="echo-control-card">
+                <h2>Your echoes</h2>
                 <label className="echo-check">
                   <input
                     type="checkbox"
@@ -591,11 +545,11 @@ export default function MovementEchoes({
                       );
                     })}
                 </div>
-              </details>
+              </section>
             </aside>
-            <AskRemotionPanel patientId={searchPatientId} exerciseId={focus.exerciseId} side={focus.selectedHand} recordings={sessions} focusId={focus.id} onOpen={openEvidence}/>
+
           </div>
-          <details className="echo-advanced echo-details"><summary>More options</summary>
+          {!hideManagementTools && <details className="echo-advanced echo-details"><summary>More options</summary>
           <details
             className="echo-details"
             onToggle={(e) => setInspecting(e.currentTarget.open)}
@@ -695,10 +649,10 @@ export default function MovementEchoes({
               </button>
             )}
           </div>}
-          </details>
+          </details>}
         </>
       )}
-      {!providedOnly&&<details
+      {!hideManagementTools&&!providedOnly&&<details
         className="echo-details"
         open={tools}
         onToggle={(e) => setTools(e.currentTarget.open)}

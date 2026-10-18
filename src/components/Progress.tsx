@@ -84,7 +84,7 @@ export default function Progress() {
     {(loading || busy) && <p role="status">{busy ? 'Opening recordings…' : 'Loading history…'}</p>}
     {viewer ? <Suspense fallback={<p role="status">Opening Movement Echoes…</p>}><MovementEchoes
       key={viewer.kind} sessions={viewer.sessions} initialFocusedSessionId={viewer.sessions?.[0]?.id} searchPatientId={viewer.kind === 'synced' ? patientId : undefined}
-      providedOnly={viewer.kind !== 'device'} backLabel="Back to Progress"
+      hideManagementTools providedOnly={viewer.kind !== 'device'} backLabel="Back to Progress"
       onDeleted={async id => { if (localSessions.find(s => s.id === id)?.trackingMode === 'pose') await useApp.getState().remove(id); }}
       onClose={() => setViewer(null)}/></Suspense> : <>
       {synced ? <section className="progress-recordings panel"><div className="section-heading"><h2>Recordings</h2><button className="btn btn-primary" disabled={selected.length < 2 || busy} onClick={() => void openRecordings(selected)}>Compare selected</button></div>

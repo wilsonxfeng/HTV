@@ -966,3 +966,83 @@
 
 /* Keep comparison modes together above the viewer. */
 .echo-view-top{flex-wrap:wrap;column-gap:20px;row-gap:8px}
+
+/* Keep one divider between repetition selection and recording selection. */
+.progress-page .echo-repeat-row{border-bottom:0}
+
+/* Make the recording chooser read as an interactive control. */
+.echo-session-section.echo-disclosure>summary{padding:16px 20px;border:1px solid #c7d5bf;border-radius:16px;background:#edf2e7;transition:background .18s,border-color .18s}
+.echo-session-section.echo-disclosure>summary:hover{background:#e1ebd7;border-color:#91a58a}
+.echo-session-section.echo-disclosure>summary h2{font-size:18px;font-weight:650}
+.echo-session-section.echo-disclosure>summary>svg{flex-shrink:0;color:var(--echo-ink)}
+.echo-session-section.echo-disclosure[open]>summary{background:#e1ebd7}
+
+/* Recording selection lives beside the video; questions sit below it. */
+.echo-layout{grid-template-areas:"main chooser" "main controls"}
+.echo-recording-picker{grid-area:chooser;border:1px solid var(--echo-line);border-radius:24px;background:#fffdf7;padding:22px;min-width:0}
+.echo-recording-picker>label{display:block;font-size:20px;font-weight:650;line-height:1.35;margin-bottom:18px;color:var(--echo-ink)}
+.echo-recording-select{position:relative}
+.echo-recording-select select{appearance:none;width:100%;min-width:0;min-height:56px;padding:14px 42px 14px 16px;border:1px solid #b7c8ad;border-radius:14px;background:#edf2e7;font:inherit;color:var(--echo-ink);cursor:pointer;text-overflow:ellipsis}
+.echo-recording-select>svg{position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--echo-ink)}
+.echo-main>.ask-remotion{margin-top:24px;min-height:0;padding:24px}
+@media(max-width:1000px){.echo-layout{grid-template-areas:"chooser" "main" "controls"}.echo-recording-picker{padding:18px}}
+
+/* Group review controls into a single sidebar with a consistent rhythm. */
+.echo-layout{grid-template-areas:"main controls";grid-template-rows:auto;column-gap:24px;row-gap:24px}
+.echo-layout>.echo-sidebar{display:flex;flex-direction:column;gap:18px;min-width:0}
+.echo-sidebar>.echo-recording-picker{width:100%;margin:0;padding:22px;background:#fffdf7}
+.echo-sidebar>.echo-control-card{width:100%;margin:0;border:1px solid var(--echo-line);border-radius:24px;padding:18px 22px}
+.echo-view-top{justify-content:flex-start;gap:12px;margin-bottom:20px}
+.echo-view-top .echo-button{min-height:48px;padding:12px 18px;font-size:15px}
+.echo-main>.ask-remotion{margin:24px 0 0;padding:24px}
+.echo-main>.ask-remotion h2{font-size:23px}
+.echo-main .ask-remotion-messages{min-height:72px}
+.echo-header{margin-bottom:28px}
+@media(max-width:1000px){.echo-layout{grid-template-areas:"controls" "main";grid-template-columns:minmax(0,1fr)}.echo-layout>.echo-sidebar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:16px}}
+@media(max-width:600px){.echo-layout>.echo-sidebar{grid-template-columns:minmax(0,1fr)}.echo-sidebar>.echo-recording-picker{padding:18px}.echo-view-top .echo-button{flex:1;font-size:14px;padding:12px}.echo-main>.ask-remotion{padding:20px}}
+
+/* Align comparison actions to the right above the video. */
+.echo-view-top{justify-content:flex-end}
+
+/* Comparison actions sit above recording selection in the right column. */
+.echo-sidebar>.echo-view-top{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin:0;width:100%}
+.echo-sidebar>.echo-view-top .echo-button{width:100%;justify-content:center;min-height:52px}
+@media(max-width:1000px){.echo-sidebar>.echo-view-top{grid-column:1/-1}}
+
+.echo-sidebar>.echo-control-card>h2{font-size:20px;margin:0 0 20px}
+
+/* Let the question area breathe and align both review columns. */
+@media(min-width:1001px){
+ .echo-layout{align-items:stretch}
+ .echo-main{display:flex;flex-direction:column}
+ .echo-main>.echo-viewer,.echo-main>.echo-side-by-side{flex-shrink:0}
+ .echo-main>.ask-remotion{flex:1;display:flex;flex-direction:column;min-height:280px;margin-top:28px;padding:28px}
+ .echo-main>.ask-remotion .ask-remotion-messages{flex:1;min-height:100px;margin-top:16px;margin-bottom:24px}
+ .echo-layout>.echo-sidebar{align-self:stretch}
+}
+
+/* Stretch the visible control card, not just its sidebar container. */
+@media(min-width:1001px){
+ .echo-layout>.echo-sidebar>.echo-control-card{flex:1;display:flex;flex-direction:column;padding:24px}
+ .echo-sidebar>.echo-control-card>.echo-check{margin:8px 0 22px}
+ .echo-sidebar>.echo-control-card>.echo-range-label{margin-bottom:24px}
+ .echo-sidebar>.echo-control-card>.echo-fields{margin-bottom:8px}
+ .echo-sidebar>.echo-control-card>.echo-layer-list{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;gap:14px;padding-top:18px}
+ .echo-sidebar>.echo-control-card .echo-layer{padding:8px 0}
+}
+
+.echo-recording-select select{background:#fffdf7;border-color:var(--echo-line)}
+
+/* Distribute extra column height between sections, not inside the chat card. */
+@media(min-width:1001px){
+ .echo-main{justify-content:space-between;gap:36px}
+ .echo-main>.echo-viewer{flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:24px}
+ .echo-main>.echo-viewer>.echo-stage{flex-shrink:0}
+ .echo-main>.echo-viewer>.echo-playback{margin-top:4px}
+ .echo-main>.echo-viewer>.echo-peak{margin-top:0}
+ .echo-main>.ask-remotion{flex:0 0 auto;min-height:220px;margin-top:0;padding:28px}
+ .echo-main>.ask-remotion .ask-remotion-messages{flex:0 0 auto;min-height:56px;margin-top:12px;margin-bottom:18px}
+}
+
+.echo-peak.echo-secondary{background:var(--echo-forest,#254d3c);color:#fffdf5;border-color:var(--echo-forest,#254d3c)}
+.echo-peak.echo-secondary:hover:not(:disabled){background:#193d2d;border-color:#193d2d}
