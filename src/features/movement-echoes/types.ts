@@ -10,6 +10,10 @@ export interface EchoFrame {
   valid: boolean;
 }
 export interface Repetition {
+  /** Imported footage can begin after the outward movement has already occurred. */
+  partial?: 'start';
+  /** Measured monotone movement phase, including holds; timestamps remain in the original video clock. */
+  phaseMap?: { phase: number; tMs: number }[];
   startMs: number;
   peakMs: number;
   endMs: number;

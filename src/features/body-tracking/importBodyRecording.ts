@@ -20,7 +20,7 @@ export async function importBodyRecording(video: Blob, options: {id?: string; ex
       const detected=tracker.detect(canvas,t*1000+1),image=detected.image[0]??[],world=detected.world[0]??[];
       const tracking=detected.image.length===1&&poseIsVisible(image,world,exercise.id,options.side);
       frames.push({t,tracking,landmarks:tracking?world:[],imageLandmarks:image.length===33?image:undefined,worldLandmarks:world.length===33?world:undefined,confidence:tracking?Math.min(...exercise.trackedLandmarks(options.side).map(j=>image[j].visibility??0)):0});
-      update({stage:'Tracking recorded movement',sessionName:options.name,completed:i+1,total});await new Promise<void>(resolve=>setTimeout(resolve,0));
+      update({stage:'Tracking recorded movement',sessionName:options.name,completed:i+1,total});
     }
     const baseline=frames.find(f=>f.tracking);if(!baseline)throw Error('The selected side could not be tracked. Check side and framing.');
     const now=new Date().toISOString();

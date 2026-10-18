@@ -8,6 +8,7 @@ import { clinicalRepository, useClinicalAccess } from '../features/clinical-data
 import type { PatientOverview, SessionRecord } from '../features/clinical-data/contracts';
 import { fetchEchoSessions, toEchoSession } from '../features/clinical-data/echoAdapter';
 import type { EchoSession } from '../features/movement-echoes/types';
+import { loadBodyDemos } from '../features/body-exercises/bodyDemo';
 import './progress.css';
 const MovementEchoes = lazy(() => import('../features/movement-echoes/MovementEchoes'));
 const dateLabel = (value: string) => new Date(value).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -59,6 +60,16 @@ export default function Progress() {
 
   const history = records;
 
+  async function openDeviceRecordings() {
+    loadController.current?.abort(); const controller = new AbortController(); loadController.current = controller;
+    setBusy(true); setError('');
+    try {
+      const sessions = await loadBodyDemos(() => {}, controller.signal);
+      if (!controller.signal.aborted) setViewer({ kind: 'device', sessions });
+    } catch (cause) {
+      if (!controller.signal.aborted) { setError(cause instanceof Error ? cause.message : 'Could not load recordings.'); setViewer({ kind: 'device' }); }
+    } finally { if (!controller.signal.aborted) setBusy(false); }
+  }
   async function openRecordings(ids: string[]) {
     loadController.current?.abort(); const controller = new AbortController(); loadController.current = controller;
     setBusy(true); setError('');
@@ -93,7 +104,7 @@ export default function Progress() {
           <button className="progress-recording-name" disabled={record.status !== 'complete' || busy} onClick={() => void openRecordings([record.id])}><strong>{dateLabel(record.startedAt)}</strong><span>{record.status === 'complete' ? 'Ready to review' : 'Upload pending'}{record.demonstration ? ' · Demo' : ''}</span></button>
           <ArrowRight size={20}/>
         </div>) : !loading && <p>No synced recordings yet.</p>}
-      </section> : <><button className="sample-card" onClick={() => setViewer({ kind: 'device' })}><Layers size={26}/><div><h2>Movement Echoes</h2></div><ArrowRight size={21}/></button><History compact/></>}
+      </section> : <><button className="sample-card" disabled={busy} onClick={() => void openDeviceRecordings()}><Layers size={26}/><div><h2>Movement Echoes</h2></div><ArrowRight size={21}/></button><History compact/></>}
     </>}
   </div>;
 }

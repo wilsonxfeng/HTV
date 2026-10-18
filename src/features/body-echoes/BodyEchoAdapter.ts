@@ -15,6 +15,6 @@ export function toBodyEchoSession(motion: MotionSession, video: Blob, metadata: 
     video, videoWidth: metadata.width, videoHeight: metadata.height, videoDurationMs: metadata.durationMs,
     landmarkOffsetMs: metadata.landmarkOffsetMs, sourceFingerprint: metadata.sha256,
     frames: motion.frames.map((frame, i) => ({tMs: frame.t * 1000, image: frame.imageLandmarks ?? [], world: frame.worldLandmarks ?? [], spread: signal[i].value, valid: signal[i].valid && signal[i].value !== null})),
-    repetitions: detectBodyRepetitions(bodySignal(motion, metadata.landmarkOffsetMs), exercise.experimental ? .12 : 8),
+    repetitions: detectBodyRepetitions(bodySignal(motion, metadata.landmarkOffsetMs), exercise.experimental ? .12 : 8, demonstration),
   };
 }

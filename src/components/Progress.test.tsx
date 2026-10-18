@@ -10,7 +10,7 @@ vi.mock('../features/clinical-data/api', () => ({ ApiSessionRepository: class { 
 vi.mock('./History', () => ({ default: () => <div>Local saved sessions</div> }));
 vi.mock('../features/movement-echoes/MovementEchoes', () => ({ default: (props: { sessions?: { id: string }[]; onClose: () => void }) => { mocks.viewer(props); return <section aria-label="Movement Echoes"><p>{props.sessions?.map(s => s.id).join(',')}</p><button onClick={props.onClose}>Back to Progress</button></section>; } }));
 vi.mock('../features/movement-echoes/handDemo', () => ({ loadHandDemo: mocks.handDemo }));
-vi.mock('../features/body-exercises/bodyDemo', () => ({ loadKneeDemo: mocks.kneeDemo }));
+vi.mock('../features/body-exercises/bodyDemo', () => ({ loadKneeDemo: mocks.kneeDemo, loadBodyDemos: mocks.kneeDemo }));
 beforeEach(() => {
   vi.clearAllMocks(); useClinicalAccess.setState({ access: null }); useApp.setState({ sessions: [] });
   mocks.patients.mockResolvedValue([{ id: 'assigned', displayName: 'Demo participant' }]); mocks.sessions.mockResolvedValue([]);
@@ -59,4 +59,13 @@ it('discards a pending synced recording load when the account changes', async ()
   await act(async () => useClinicalAccess.setState({ access: null }));
   await act(async () => resolve(record));
   expect(screen.queryByRole('region', { name: 'Movement Echoes' })).toBeNull();
+});
+
+it('loads the current prepared body recordings when opening local Movement Echoes', async () => {
+  mocks.kneeDemo.mockResolvedValue([{ id: 'new-leg' }, { id: 'new-curl' }]);
+  render(<Progress/>);
+  fireEvent.click(screen.getByRole('button', { name: 'Movement Echoes' }));
+  await screen.findByRole('region', { name: 'Movement Echoes' });
+  expect(mocks.viewer.mock.lastCall?.[0]).toMatchObject({ sessions: [{ id: 'new-leg' }, { id: 'new-curl' }] });
+  expect(mocks.viewer.mock.lastCall?.[0].searchPatientId).toBeUndefined();
 });

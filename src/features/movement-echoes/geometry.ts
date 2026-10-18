@@ -2,7 +2,17 @@ import type { EchoFrame, Palm, Point, Repetition } from './types';
 
 export const clamp = (v: number, lo = 0, hi = 1) =>
   Math.min(hi, Math.max(lo, Number.isFinite(v) ? v : lo));
+function interpolateMap(value: number, points: NonNullable<Repetition['phaseMap']>, input: 'phase' | 'tMs', output: 'phase' | 'tMs') {
+  if (value <= points[0][input]) return points[0][output];
+  if (value >= points.at(-1)![input]) return points.at(-1)![output];
+  let lo = 0, hi = points.length - 1;
+  while (lo + 1 < hi) { const mid = (lo + hi) >>> 1; if (points[mid][input] < value) lo = mid; else hi = mid; }
+  const a = points[lo], b = points[hi], span = b[input] - a[input];
+  return a[output] + (b[output] - a[output]) * (span > 0 ? (value - a[input]) / span : 0);
+}
 export function timeToPhase(t: number, rep: Repetition) {
+  if (rep.partial === 'start' && t <= rep.peakMs) return .5;
+  if (rep.phaseMap && rep.phaseMap.length >= 3) return interpolateMap(t, rep.phaseMap, 'tMs', 'phase');
   if (t <= rep.peakMs)
     return (
       0.5 * clamp((t - rep.startMs) / Math.max(1, rep.peakMs - rep.startMs))
@@ -13,6 +23,9 @@ export function timeToPhase(t: number, rep: Repetition) {
 }
 export function phaseToTime(p: number, rep: Repetition) {
   p = clamp(p);
+  if (rep.partial === 'start' && p <= .5) return rep.peakMs;
+  if (p === .5) return rep.peakMs;
+  if (rep.phaseMap && rep.phaseMap.length >= 3) return interpolateMap(p, rep.phaseMap, 'phase', 'tMs');
   return p <= 0.5
     ? rep.startMs + 2 * p * (rep.peakMs - rep.startMs)
     : rep.peakMs + 2 * (p - 0.5) * (rep.endMs - rep.peakMs);
@@ -172,7 +185,7 @@ export function detectRepetitions(frames: EchoFrame[]): Repetition[] {
 export const representativeRep = (reps: Repetition[]) =>
   reps.reduce(
     (best, r, i) =>
-      r.valid && r.coverage > (reps[best]?.coverage ?? -1) ? i : best,
+      r.valid && ((!r.partial && reps[best]?.partial) || (Boolean(r.partial) === Boolean(reps[best]?.partial) && r.coverage > (reps[best]?.coverage ?? -1))) ? i : best,
     0,
   );
 export function compatible(

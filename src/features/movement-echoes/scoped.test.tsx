@@ -65,3 +65,20 @@ it('submits chat with Enter and focuses the returned recording without expanding
  expect(mock.viewer.mock.lastCall?.[0].evidenceFocus.token).toBeGreaterThan(props.evidenceFocus.token);
  expect(mock.viewer.mock.lastCall?.[0].focusId).toBe(b.id);
 });
+
+it('selects a shared repetition and allows an overlay to follow a different rep', async () => {
+  const a = clip('leg-a'), b = clip('leg-b');
+  for (const session of [a, b]) {
+    session.exerciseId = 'seated-knee-extension'; session.trackingMode = 'pose';
+    session.repetitions = [
+      { startMs: 1000, peakMs: 2000, endMs: 3000, peakSpread: 140, valid: true, coverage: 1 },
+      { startMs: 7000, peakMs: 8000, endMs: 9000, peakSpread: 145, valid: true, coverage: 1 },
+    ];
+  }
+  render(<MovementEchoes providedOnly sessions={[a, b]} initialFocusedSessionId={a.id}/>);
+  const common = await screen.findByLabelText('Comparison repetition');
+  fireEvent.change(common, { target: { value: '1' } });
+  await waitFor(() => expect(mock.viewer.mock.lastCall?.[0].repChoices).toMatchObject({ 'leg-a': 1, 'leg-b': 1 }));
+  fireEvent.change(screen.getByLabelText('leg-b repetition'), { target: { value: '0' } });
+  await waitFor(() => expect(mock.viewer.mock.lastCall?.[0].repChoices).toMatchObject({ 'leg-a': 1, 'leg-b': 0 }));
+});

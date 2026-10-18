@@ -465,6 +465,12 @@ export default function MovementEchoes({
               <section className="echo-recording-picker"><label htmlFor="echo-recording-choice">Choose a recording</label><div className="echo-recording-select"><select id="echo-recording-choice" value={focus.id} onChange={event => setFocusId(event.target.value)}>{sessions.map(session => <option key={session.id} value={session.id}>{session.name.replace(/\.(mov|mp4|webm)$/i, '')}</option>)}</select><ChevronDown size={20} aria-hidden="true"/></div></section>
               <section className="echo-control-card">
                 <h2>Your echoes</h2>
+                {focus.repetitions.length > 1 && <label className="echo-fields echo-repetition-choice">Compare repetition
+                  <select aria-label="Comparison repetition" value={repChoices[focus.id] ?? 0} onChange={event => {
+                    const index = Number(event.target.value); setEvidenceFocus(undefined);
+                    setRepChoices(current => ({ ...current, ...Object.fromEntries([focus, ...comparison].map(s => [s.id, Math.min(index, Math.max(0, s.repetitions.length - 1))])) }));
+                  }}>{focus.repetitions.map((rep, i) => <option key={i} value={i}>Rep {i + 1}{rep.partial ? ' · return only' : ''}</option>)}</select>
+                </label>}
                 <label className="echo-check">
                   <input
                     type="checkbox"
@@ -504,13 +510,14 @@ export default function MovementEchoes({
                 </label>
                 <div className="echo-layer-list">
                   {sessions
-                    .filter((s) => s.id !== focus.id)
+                    .filter((s) => s.id !== focus.id && compatible(focus, s))
                     .map((s, i) => {
                       const eligible = compatible(focus, s);
                       return (
-                        <label className="echo-layer" key={s.id}>
+                        <div className="echo-layer" key={s.id}>
                           <input
                             type="checkbox"
+                            aria-label={`Overlay ${s.name}`}
                             checked={eligible && enabled[s.id] !== false}
                             disabled={!eligible}
                             onChange={(e) =>
@@ -541,7 +548,10 @@ export default function MovementEchoes({
                             </small>
                           </span>
                           <span className="echo-sr-only">Layer {i + 1}</span>
-                        </label>
+                          {s.repetitions.length > 1 && <select aria-label={`${s.name} repetition`} value={repChoices[s.id] ?? 0} onChange={event => setRepChoices(current => ({ ...current, [s.id]: Number(event.target.value) }))}>
+                            {s.repetitions.map((rep, index) => <option key={index} value={index}>Rep {index + 1}{rep.partial ? ' · return only' : ''}</option>)}
+                          </select>}
+                        </div>
                       );
                     })}
                 </div>

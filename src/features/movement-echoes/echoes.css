@@ -1046,3 +1046,4 @@
 
 .echo-peak.echo-secondary{background:var(--echo-forest,#254d3c);color:#fffdf5;border-color:var(--echo-forest,#254d3c)}
 .echo-peak.echo-secondary:hover:not(:disabled){background:#193d2d;border-color:#193d2d}
+.echo-repetition-choice{margin:12px 0;gap:12px}.echo-layer>span:not(.echo-sr-only){flex:1;min-width:0}.echo-layer>select{max-width:100px;margin-left:auto;font-size:13px;padding:8px}.echo-layer-list .echo-layer{flex-wrap:wrap}

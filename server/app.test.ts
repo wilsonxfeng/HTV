@@ -60,7 +60,7 @@ describe('authenticated upload pipeline against PostgreSQL', () => {
     expect(completed.statusCode,completed.body).toBe(200);
     const detail=(await app.inject({url:`/api/sessions/${motion.id}`,headers:headers(clinicianToken)})).json<SessionDetail>();
     expect(detail.motion.frames).toEqual(motion.frames);expect(detail.motion.trackingMode).toBe('pose');expect(detail.motion.calibration.imageNeutral).toHaveLength(33);
-    expect(detail.metrics?.pairs).toEqual([]);expect(detail.metrics?.body?.primaryValue).toBeGreaterThan(120);expect(detail.repetitions).toHaveLength(1);
+    expect(detail.metrics?.pairs).toEqual([]);expect(detail.metrics?.body?.primaryValue).toBeGreaterThan(120);expect(detail.repetitions).toHaveLength(2);
     const count=await db.query<{n:number}>('SELECT count(*)::integer AS n FROM pose_frames WHERE session_id=$1',[motion.id]);expect(count.rows[0].n).toBe(motion.frames.length);
     expect((await db.query<{n:number}>('SELECT count(*)::integer AS n FROM hand_frames WHERE session_id=$1',[motion.id])).rows[0].n).toBe(0);
     const progress=await repository.progress(patientId);expect(progress.find(p=>p.id===motion.id)?.angle).toBe(detail.metrics?.body?.primaryValue);

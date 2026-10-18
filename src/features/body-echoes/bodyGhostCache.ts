@@ -28,7 +28,6 @@ export async function buildBodyGhostCache(session:EchoSession,repetitionIndex:nu
         }catch{ /* An unavailable mask stays a gap; never substitute a drawn body. */ }
       }
       update({stage:'Extracting recorded person',completed:i+1,total:config.sampleCount,sessionName:session.name});
-      await new Promise<void>(resolve=>setTimeout(resolve,0));
     }
     if(!frames.some(f=>f.quality.valid))throw Error('No reliable person outlines. Replay the original video or retry with clearer framing.');
     const cache={key,sessionId:session.id,repetitionIndex,version:BODY_SEGMENTATION_VERSION,config,frames,sourceFingerprint:session.sourceFingerprint};

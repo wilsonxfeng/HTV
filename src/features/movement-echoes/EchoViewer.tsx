@@ -181,7 +181,7 @@ export default function EchoViewer({
     (p: number) => {
       const video = videoRef.current;
       if (!video || !rep) return;
-      phaseRef.current = rep.static ? 0.5 : p;
+      phaseRef.current = rep.static ? 0.5 : rep.partial === 'start' ? Math.max(.5, p) : p;
       setPhase(phaseRef.current);
       setChoices([]);
       const t = phaseToTime(phaseRef.current, rep) / 1000;
@@ -216,7 +216,7 @@ export default function EchoViewer({
       if (!canvas || !video || !rep || !visible) return;
       if (playing && !loading) {
         if (video.currentTime * 1000 >= rep.endMs - 30) {
-          video.currentTime = rep.startMs / 1000;
+          video.currentTime = phaseToTime(0, rep) / 1000;
         }
         const p = timeToPhase(decodedMs ?? video.currentTime * 1000, rep);
         phaseRef.current = p;
@@ -244,6 +244,7 @@ export default function EchoViewer({
               unavailable++;
               continue;
             }
+            if (session.repetitions[repChoices[id] ?? 0]?.partial === 'start' && phaseRef.current < .5) continue;
             const source = sampleGhost(
               cache,
               phaseRef.current,
@@ -425,6 +426,7 @@ export default function EchoViewer({
           No usable repetition. You can inspect the original recording below.
         </p>
       )}
+      {rep?.partial === 'start' && <p className="echo-note">Rep 1 starts extended. Comparing the recorded return movement.</p>}
       <div className="echo-playback">
         <button
           className="echo-button echo-primary echo-play"
@@ -450,7 +452,7 @@ export default function EchoViewer({
             id="echo-phase"
             aria-label="Movement phase"
             type="range"
-            min={0}
+            min={rep?.partial === 'start' ? .5 : 0}
             max={1}
             step={0.001}
             value={phase}
@@ -465,6 +467,7 @@ export default function EchoViewer({
         >
           <option value={1}>1×</option>
           <option value={0.5}>0.5×</option>
+          <option value={0.25}>0.25×</option>
         </select>
       </div>
       <button

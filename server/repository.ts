@@ -21,8 +21,8 @@ function canonical(value: unknown): unknown {
 }
 export const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
 
-export function measuredRepetitions(motion: MotionSession, offset: number): Repetition[] {
-  if(motion.trackingMode==='pose')return detectBodyRepetitions(bodySignal(motion,offset),getExercise(motion.exerciseId).experimental?.12:8);
+export function measuredRepetitions(motion: MotionSession, offset: number, includePartialStart = false): Repetition[] {
+  if(motion.trackingMode==='pose')return detectBodyRepetitions(bodySignal(motion,offset),getExercise(motion.exerciseId).experimental?.12:8,includePartialStart);
   return detectRepetitions(motion.frames.map(frame => {
     const angles = frame.tracking ? pairAngles(frame.landmarks) : [];
     return { tMs: frame.t * 1000 + offset, image: frame.imageLandmarks ?? [], world: frame.worldLandmarks ?? [], valid: frame.tracking && angles.length === 4 && frame.imageLandmarks?.length === 21, spread: angles.length === 4 ? angles.slice(1).reduce((a, b) => a + b, 0) / 3 : null };
@@ -78,11 +78,11 @@ export class ClinicalRepository {
       const finalKey = `recordings/${metadata.patientId}/${id}/${metadata.video.sha256}.${metadata.video.mimeType.startsWith('video/mp4') ? 'mp4' : 'webm'}`;
       await this.videos.finalize(row.upload_key, finalKey, metadata.video);
       const metrics = analyzeSession(motion);
-      const repetitions = measuredRepetitions(motion, metadata.video.landmarkOffsetMs).filter(rep => rep.startMs >= 0 && rep.endMs <= metadata.video.durationMs);
+      const repetitions = measuredRepetitions(motion, metadata.video.landmarkOffsetMs, metadata.demonstration).filter(rep => rep.startMs >= 0 && rep.endMs <= metadata.video.durationMs);
       await db.query(`INSERT INTO ${motion.trackingMode==='pose'?'pose_frames':'hand_frames'} (session_id,captured_at,t_ms,landmarks) SELECT $1::uuid,$2::timestamptz + ((f->>'t')::double precision * interval '1 second'),(f->>'t')::double precision*1000,f FROM jsonb_array_elements($3::jsonb) f`, [id, metadata.startedAt, JSON.stringify(motion.frames)]);
       for (const [index, rep] of repetitions.entries()) await db.query('INSERT INTO repetitions (session_id,rep_index,start_ms,peak_ms,end_ms,metrics) VALUES ($1,$2,$3,$4,$5,$6::jsonb)', [id, index, rep.startMs, rep.peakMs, rep.endMs, JSON.stringify(rep)]);
       await db.query(`INSERT INTO session_reports (session_id,metrics) VALUES ($1,$2::jsonb)`, [id, JSON.stringify(metrics)]);
-      await db.query(`UPDATE sessions SET status='complete',video_key=$2,calibration=$3::jsonb,completed=$4,completion_hash=$5 WHERE id=$1`, [id, finalKey, JSON.stringify({ calibration: motion.calibration, cycleDuration: motion.cycleDuration, duration: motion.duration, source: motion.source, repetitionTarget:motion.repetitionTarget }), motion.trackingMode==='pose'?Boolean(motion.completed)&&repetitions.length>=(motion.repetitionTarget??3):Boolean(motion.completed), hash]);
+      await db.query(`UPDATE sessions SET status='complete',video_key=$2,calibration=$3::jsonb,completed=$4,completion_hash=$5 WHERE id=$1`, [id, finalKey, JSON.stringify({ calibration: motion.calibration, cycleDuration: motion.cycleDuration, duration: motion.duration, source: motion.source, repetitionTarget:motion.repetitionTarget }), motion.trackingMode==='pose'?Boolean(motion.completed)&&repetitions.filter(rep=>!rep.partial).length>=(motion.repetitionTarget??3):Boolean(motion.completed), hash]);
       return this.record(await this.raw(id, db), db);
     });
   }

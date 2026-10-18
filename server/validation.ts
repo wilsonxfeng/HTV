@@ -13,6 +13,8 @@ const frame = z.object({
   if (!value.tracking && value.landmarks.length) ctx.addIssue({ code: 'custom', message: 'Lost tracking must remain a gap.' });
   if (value.imageLandmarks?.some(p => p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1)) ctx.addIssue({ code: 'custom', message: 'Image coordinates are outside the video.' });
 });
+// The supplied curl recordings use a front view; cohorts still keep viewpoints separate.
+const supportedCameraView = (id: string, view?: string) => view === getExercise(id).cameraView || (id === 'unweighted-bicep-curl' && view === 'front');
 const exerciseId = z.enum(['finger-spread-close', 'seated-knee-extension', 'unweighted-bicep-curl', 'seated-trunk-rotation']);
 const bodyMetadata = {trackingMode: z.enum(['hand','pose']).optional(), bodyRegion: z.enum(['hand','arm','leg','core']).optional(), cameraView: z.enum(['front','side','three-quarter']).optional(), targetSide: z.enum(['Left','Right']).optional(), analysisVersion: z.string().max(40).optional(), segmentationCacheVersion: z.string().max(40).optional()};
 export const createSchema = z.object({
@@ -21,7 +23,7 @@ export const createSchema = z.object({
   video: z.object({ mimeType: z.string().regex(/^video\/(webm|mp4)(;codecs=[a-zA-Z0-9., _-]+)?$/), sizeBytes: z.number().int().positive().max(200 * 1024 * 1024), sha256: z.string().regex(/^[a-f0-9]{64}$/), width: z.number().int().min(64).max(4096), height: z.number().int().min(64).max(4096), durationMs: z.number().min(600).max(90000), landmarkOffsetMs: z.number().min(-2000).max(2000), mirrored: z.boolean() }).strict(),
 }).strict().superRefine((value,ctx)=>{
   const exercise=getExercise(value.exerciseId);
-  if(exercise.trackingMode==='pose' && (value.trackingMode!=='pose'||value.bodyRegion!==exercise.bodyRegion||value.cameraView!==exercise.cameraView||value.targetSide!==value.hand||value.analysisVersion!==BODY_ANALYSIS_VERSION||value.segmentationCacheVersion!==BODY_SEGMENTATION_VERSION))ctx.addIssue({code:'custom',message:'Body recording metadata must match its exercise, side and analysis version.'});
+  if(exercise.trackingMode==='pose' && (value.trackingMode!=='pose'||value.bodyRegion!==exercise.bodyRegion||!supportedCameraView(value.exerciseId,value.cameraView)||value.targetSide!==value.hand||value.analysisVersion!==BODY_ANALYSIS_VERSION||value.segmentationCacheVersion!==BODY_SEGMENTATION_VERSION))ctx.addIssue({code:'custom',message:'Body recording metadata must match its exercise, side and analysis version.'});
   if(exercise.trackingMode==='hand' && value.trackingMode==='pose')ctx.addIssue({code:'custom',message:'Hand recordings cannot use pose tracking.'});
 });
 const handMotionSchema = z.object({
@@ -42,7 +44,7 @@ export const poseMotionSchema = z.object({
   calibration:z.object({neutral:posePoints,target:posePoints,imageNeutral:posePoints,source:z.enum(['personal','clinician','demo']),hand:z.enum(['Left','Right']),createdAt:z.iso.datetime({offset:true})}).strict(),
 }).strict().superRefine((value,ctx)=>{
   const exercise=getExercise(value.exerciseId);
-  if(exercise.trackingMode!=='pose'||value.bodyRegion!==exercise.bodyRegion||value.cameraView!==exercise.cameraView||value.targetSide!==value.hand||value.analysisVersion!==BODY_ANALYSIS_VERSION||value.segmentationCacheVersion!==BODY_SEGMENTATION_VERSION)ctx.addIssue({code:'custom',message:'Body metadata does not match this exercise.'});
+  if(exercise.trackingMode!=='pose'||value.bodyRegion!==exercise.bodyRegion||!supportedCameraView(value.exerciseId,value.cameraView)||value.targetSide!==value.hand||value.analysisVersion!==BODY_ANALYSIS_VERSION||value.segmentationCacheVersion!==BODY_SEGMENTATION_VERSION)ctx.addIssue({code:'custom',message:'Body metadata does not match this exercise.'});
   if(value.calibration.hand!==value.hand||!poseIsVisible(value.calibration.imageNeutral,value.calibration.neutral,value.exerciseId,value.hand))ctx.addIssue({code:'custom',message:'A visible baseline of the selected side is required.'});
   if(value.frames.some((f,i)=>f.t>value.duration||(i>0&&f.t-value.frames[i-1].t<.001)))ctx.addIssue({code:'custom',message:'Frames must increase inside the recording clock.'});
   if(value.frames.some(f=>f.tracking?(f.landmarks.length!==33||!poseIsVisible(f.imageLandmarks??[],f.worldLandmarks??[],value.exerciseId,value.hand)):f.landmarks.length!==0))ctx.addIssue({code:'custom',message:'Tracked pose frames need 33 visible image/world points. Lost tracking must stay a gap.'});
