@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Camera, Pause, Play, Square } from 'lucide-react';
+import { ArrowLeft, Camera, Check, Loader2, Pause, Play, RotateCcw, Square, TriangleAlert } from 'lucide-react';
 const VoiceCoach=lazy(()=>import('../../../components/VoiceCoach'));
 import { useApp } from '../../../lib/store';
 import type { MotionSession, HandSide } from '../../../lib/types';
@@ -14,14 +14,13 @@ import type { ClinicalAccess } from '../../clinical-data/access';
 import { recordingOutbox } from '../../clinical-data/outbox';
 import { bodySessionMetadata } from '../../clinical-data/echoAdapter';
 import { getExercise } from '../exerciseRegistry';
-import BodyExerciseGuide from './BodyExerciseGuide';
 import CameraFramingGuide from './CameraFramingGuide';
 import '../../../components/exercise.css';
 import './body-exercises.css';
 
 export default function BodyExerciseRecorder({exerciseId,onBack,onComplete}: {exerciseId:string;onBack:()=>void;onComplete:(s:MotionSession)=>void}) {
   const exercise=getExercise(exerciseId);
-  const [side,setSide]=useState<HandSide>('Right'),[target,setTarget]=useState(exercise.repetitionTarget),[state,setState]=useState<'setup'|'recording'|'paused'|'saving'|'save-error'>('setup');
+  const [side,setSide]=useState<HandSide>('Right'),[target]=useState(exercise.repetitionTarget),[state,setState]=useState<'setup'|'recording'|'paused'|'saving'|'save-error'>('setup');
   const [count,setCount]=useState(0),[seconds,setSeconds]=useState(0),[error,setError]=useState(''),[cue,setCue]=useState(`${exercise.setup} Which side are you exercising? Say left or right.`);
   const tracker=usePoseTracker(exerciseId,side), active=useRef<PoseRecorder|null>(null), finishRef=useRef<(interrupted?:boolean)=>void>(()=>{}), sharing=useRef<ClinicalAccess|null>(null),saving=useRef(false),pending=useRef<Awaited<ReturnType<PoseRecorder['finish']>>|null>(null),interruptedByPain=useRef(false);
   const start=()=>{
@@ -82,11 +81,20 @@ export default function BodyExerciseRecorder({exerciseId,onBack,onComplete}: {ex
     return 'Say left, right, ready, begin, pause, resume, finish, or stop.';
   };
   const busy=state!=='setup';
-  return <div className="body-practice page-enter"><button className="text-button" disabled={busy} onClick={onBack}><ArrowLeft size={20}/>Exercises</button><header><h1>{exercise.title}</h1>{exercise.experimental&&<span className="badge">Experimental · Video comparison</span>}</header>
-    <Suspense fallback={<p>Loading coach…</p>}><VoiceCoach context={`Exercise: ${exercise.title}. ${exercise.setup} ${exercise.movement} Side: ${side}. State: ${state}. Confirmed repetitions: ${count} of ${target}. ${tracker.sample?.reason??''}. Trunk rotation degrees are never reported.`} cue={cue} commands="left, right, ready, begin, pause, resume, finish, retry camera, stop" onReply={reply} onConnection={connected=>{if(connected&&tracker.status==='off')void tracker.start();else if(!connected&&active.current&&!active.current.paused)pause();}}/></Suspense>
-    <div className="body-recorder-layout"><section className="body-camera"><div className="body-camera-heading"><Camera size={20}/><strong>{state==='recording'?'Recording':state==='paused'?'Paused':'Camera'}</strong>{busy&&<span>{count}/{target} repetitions · {seconds.toFixed(0)}s</span>}</div><div className="body-video-stage"><video ref={tracker.videoRef} muted playsInline aria-label="Unmirrored body camera preview"/><CameraFramingGuide ready={!!tracker.sample?.tracking} message={tracker.status==='ready'?(tracker.sample?.reason??exercise.framing):exercise.framing}/>{tracker.status!=='ready'&&<button className="btn btn-primary body-enable-camera" disabled={tracker.status==='loading'||busy} onClick={()=>void tracker.start()}>{tracker.status==='loading'?'Loading camera…':tracker.status==='error'?'Retry camera':'Enable camera'}</button>}</div>
-      <div className="body-record-controls">{state==='setup'?<button className="btn btn-primary" disabled={!tracker.sample?.tracking} onClick={start}><Play size={20}/>Start recording</button>:<><button className="btn btn-secondary" disabled={state==='saving'||state==='save-error'} onClick={state==='paused'?resume:pause}>{state==='paused'?<Play size={20}/>:<Pause size={20}/>} {state==='paused'?'Resume':'Pause'}</button><button className="btn btn-primary" disabled={state==='saving'} onClick={()=>void finish()}><Square size={18}/>{state==='saving'?'Saving…':state==='save-error'?'Retry saving':'Finish'}</button></>}</div></section>
-      <aside className="body-setup"><div className="body-settings"><label>Side<select disabled={busy} value={side} onChange={e=>setSide(e.target.value as HandSide)}><option>Right</option><option>Left</option></select></label><label>Repetitions<select disabled={busy} value={target} onChange={e=>setTarget(Number(e.target.value))}>{[1,2,3,4,5].map(n=><option key={n}>{n}</option>)}</select></label></div><BodyExerciseGuide exercise={exercise}/><p className="body-limit">Follow your prescribed range. Stop if uncomfortable.</p></aside></div>
+  return <div className="body-practice body-lesson page-enter"><button className="text-button" disabled={busy} onClick={onBack}><ArrowLeft size={20}/>Exercises</button><header><h1>{exercise.title}</h1>{exercise.experimental&&<span className="badge">Experimental · Video comparison</span>}</header>
+
+    <div className="ex-steps" aria-label="Exercise progress">{['Coach','Position','Practice','Replay'].map((label,i)=>{const current=busy?3:tracker.status==='ready'?2:1;return <div key={label} className={`ex-step ${current===i+1?'ex-current':current>i+1?'ex-complete':''}`}><span>{current>i+1?<Check size={14}/>: `0${i+1}`}</span>{label}</div>;})}</div>
+    <div className="body-recorder-layout"><aside className="ex-sidebar body-coach-column"><Suspense fallback={<p>Loading coach…</p>}><VoiceCoach context={`Exercise: ${exercise.title}. ${exercise.setup} ${exercise.movement} Side: ${side}. State: ${state}. Confirmed repetitions: ${count} of ${target}. ${tracker.sample?.reason??''}. Trunk rotation degrees are never reported.`} cue={cue} commands="left, right, ready, begin, pause, resume, finish, retry camera, stop" onReply={reply} onConnection={connected=>{if(connected&&tracker.status==='off')void tracker.start();else if(!connected&&active.current&&!active.current.paused)pause();}}/></Suspense>      </aside><section className="ex-camera-panel body-camera" aria-label="Camera and live tracking">
+      <div className="ex-camera-top"><span><Camera size={15}/>Camera</span><span className={state==='recording'?'ex-rec':'ex-feed-note'}>{state==='recording'?<><i/> REC · {seconds.toFixed(1)}s</>:state==='paused'?'PAUSED':'ORIGINAL VIEW'}</span></div>
+      <div className="ex-video-wrap body-pose-video">
+        <video ref={tracker.videoRef} className="ex-video" muted playsInline aria-label="Unmirrored body camera preview"/>
+        {tracker.status==='ready'&&<CameraFramingGuide ready={!!tracker.sample?.tracking}/>}
+        {tracker.status==='off'&&<div className="ex-camera-cover"><div className="ex-camera-icon"><Camera size={29}/></div><h2>Camera off</h2></div>}
+        {tracker.status==='loading'&&<div className="ex-camera-cover"><Loader2 size={34} className="ex-spin"/><h2>Starting camera…</h2><p>Allow camera access when your browser asks.</p></div>}
+        {tracker.status==='error'&&<div className="ex-camera-cover"><TriangleAlert size={31}/><h2>Camera disconnected</h2><p>{tracker.error}</p><button className="ex-primary" disabled={busy} onClick={()=>void tracker.start()}>Retry camera<RotateCcw size={15}/></button></div>}
+      </div>
+      {tracker.status==='ready'&&<div className="ex-camera-bottom"><span className="ex-tracking"><i/>{tracker.status==='ready'?(tracker.sample?.reason??exercise.framing):exercise.framing}</span></div>}{(tracker.status==='ready'||busy)&&<div className="body-record-controls">{state==='setup'?<button className="btn btn-primary" disabled={!tracker.sample?.tracking} onClick={start}><Play size={20}/>Start recording</button>:<><button className="btn btn-secondary" disabled={state==='saving'||state==='save-error'} onClick={state==='paused'?resume:pause}>{state==='paused'?<Play size={20}/>:<Pause size={20}/>} {state==='paused'?'Resume':'Pause'}</button><button className="btn btn-primary" disabled={state==='saving'} onClick={()=>void finish()}><Square size={18}/>{state==='saving'?'Saving…':state==='save-error'?'Retry saving':'Finish'}</button></>}</div>}</section>
+</div>
     {(error||tracker.error)&&<p className="clinical-error" role="alert">{error||tracker.error}</p>}
   </div>;
 }

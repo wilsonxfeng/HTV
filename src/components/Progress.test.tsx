@@ -20,7 +20,8 @@ afterEach(cleanup);
 it('keeps recording navigation in Progress and moves search out of this page', () => {
   const view = render(<Progress/>);
   expect(screen.queryByRole('heading', { name: 'Ask ReMotion' })).toBeNull();
-  expect(screen.getByLabelText('Exercise').textContent).toContain('Seated Knee Extension');
+  expect(screen.queryByLabelText('Exercise')).toBeNull();
+  expect(screen.queryByLabelText('Side')).toBeNull();
   expect(screen.queryByText('Connect synced history')).toBeNull(); expect(screen.queryByText('Clinician dashboard')).toBeNull();
   expect(view.container.textContent).not.toMatch(/°|%|Chart values|hold angle/);
 });

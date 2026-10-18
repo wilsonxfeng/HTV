@@ -12,16 +12,14 @@ type Props = {
 };
 
 export default function VoiceCoach(props: Props) {
-  const [caption, setCaption] = useState('');
   const [feedback, setFeedback] = useState('');
   const latest = useRef(props); latest.current = props;
   return <ConversationProvider onMessage={message => {
-    if (message.source === 'ai') setCaption(message.message);
-    else setFeedback(latest.current.onReply(message.message));
-  }}><CoachControls {...props} caption={caption} feedback={feedback} onFeedback={setFeedback}/></ConversationProvider>;
+    if (message.source !== 'ai') setFeedback(latest.current.onReply(message.message));
+  }}><CoachControls {...props} feedback={feedback} onFeedback={setFeedback}/></ConversationProvider>;
 }
 
-function CoachControls({ context, cue, commands = 'left hand, right hand, ready, begin, stop, retry camera, reference video, recalibrate, see my movement, and 6/8/10 seconds', onReply, onConnection, caption, feedback, onFeedback }: Props & { caption: string; feedback: string; onFeedback: (text: string) => void }) {
+function CoachControls({ context, cue, commands = 'left hand, right hand, ready, begin, stop, retry camera, reference video, recalibrate, see my movement, and 6/8/10 seconds', onReply, onConnection, feedback, onFeedback }: Props & { feedback: string; onFeedback: (text: string) => void }) {
   const { startSession, endSession, sendContextualUpdate, sendUserMessage } = useConversationControls();
   const { status, message } = useConversationStatus();
   const { isMuted, setMuted } = useConversationInput();
@@ -69,7 +67,7 @@ function CoachControls({ context, cue, commands = 'left hand, right hand, ready,
     {!connected && !connecting && <><button className="btn btn-primary full" onClick={start}><Mic size={19}/>Start lesson</button><p className="voice-consent">Uses camera and mic. Audio and lesson progress go to ElevenLabs.</p></>}
     {(connected || connecting) && <div className="voice-controls"><button className="btn btn-secondary" onClick={() => { connectionHandler.current(false); void endSession(); }}><PhoneOff size={17}/>{connecting ? 'Cancel' : 'End lesson'}</button>{connected && <button className="btn btn-secondary" onClick={() => setMuted(!isMuted)} aria-pressed={isMuted}>{isMuted ? <MicOff size={17}/> : <Mic size={17}/>} {isMuted ? 'Unmute' : 'Mute'}</button>}</div>}
     {(status === 'error' || localError) && <p className="voice-error" role="alert">{localError || (/permission|denied|NotAllowed/i.test(message ?? '') ? 'Allow microphone access in your browser, then start the lesson again.' : 'Your coach could not connect. Start the lesson again to retry.')}</p>}
-    {connected && <><details className="voice-transcript"><summary>Transcript</summary><div className="voice-caption" role="log" aria-label="Latest words from your coach"><p>{caption || 'Connecting…'}</p></div></details><form className="voice-reply" onSubmit={event => { event.preventDefault(); if (!reply.trim()) return; const text = reply.trim(); onFeedback(onReply(text)); sendUserMessage(text); setReply(''); }}><label htmlFor="coach-reply">Type a reply</label><div><input id="coach-reply" value={reply} onChange={event => setReply(event.target.value)} placeholder="e.g. Right hand" autoComplete="off"/><button type="submit" aria-label="Send reply" disabled={!reply.trim()}><Send size={18}/></button></div></form></>}
+    {connected && <><form className="voice-reply" onSubmit={event => { event.preventDefault(); if (!reply.trim()) return; const text = reply.trim(); onFeedback(onReply(text)); sendUserMessage(text); setReply(''); }}><label htmlFor="coach-reply">Type a reply</label><div><input id="coach-reply" value={reply} onChange={event => setReply(event.target.value)} placeholder="e.g. Right hand" autoComplete="off"/><button type="submit" aria-label="Send reply" disabled={!reply.trim()}><Send size={18}/></button></div></form></>}
     {feedback && <p className="voice-feedback" role="status">{feedback}</p>}
     </div>
   </section>;

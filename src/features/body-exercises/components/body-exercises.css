@@ -33,3 +33,26 @@
 .practice-selection-footer .btn{min-height:60px;flex-shrink:0}
 @media(min-width:800px){.exercise-option-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.exercise-option{min-height:180px}.practice-selection-footer{flex-direction:row;align-items:center;justify-content:space-between;gap:40px}.practice-selection-footer .btn{min-width:210px}.practice-selection-footer>div{max-width:720px}}
 @media(max-width:499px){.exercise-option{padding:20px;gap:12px}.exercise-option-icon{width:44px;height:44px}.exercise-option-copy strong{font-size:19px}.exercise-option-copy>span:last-child{font-size:15px}.practice-selection-footer{padding:22px}}
+
+/* Body exercises share the hand lesson's coach/camera arrangement. */
+.body-practice.body-lesson{max-width:1180px;padding:20px 35px}
+.body-lesson .body-recorder-layout{grid-template-columns:minmax(280px,.85fr) minmax(0,2.15fr);align-items:stretch;gap:25px}
+.body-lesson .body-coach-column{min-width:0}
+.body-lesson .body-coach-column>.voice-coach{margin:0;flex:1;display:flex;flex-direction:column}
+.body-lesson .body-setup{background:#fffdf7;border:1px solid var(--line);border-radius:24px;padding:20px;gap:16px}
+.body-lesson .body-settings{flex-direction:column;gap:16px}
+.body-lesson .body-guide{margin-top:20px}
+.body-lesson .body-limit{margin-top:18px}
+.body-lesson .body-camera{min-width:0;display:flex;flex-direction:column}
+.body-lesson .body-video-stage{flex:1;min-height:390px}
+.body-lesson .body-video-stage video{position:absolute;inset:0}
+.body-lesson .body-camera-heading,.body-lesson .body-record-controls,.body-lesson .ex-camera-bottom{flex-shrink:0}
+@media(max-width:759px){.body-practice.body-lesson{padding:16px 20px 28px}.body-lesson .body-recorder-layout{grid-template-columns:minmax(0,1fr)}.body-lesson .body-video-stage{min-height:300px}}
+
+/* Use the same camera surface as the finger exercise without mirroring pose footage. */
+.body-lesson .body-pose-video{aspect-ratio:4/3;flex:1;min-height:390px}
+.body-lesson .body-pose-video .ex-video{transform:none}
+.body-lesson .body-camera .ex-camera-top{font-weight:400}
+.body-lesson .body-frame-corners{border:2px dashed #e6efb0aa;border-radius:24px}
+.body-lesson .body-framing.ready .body-frame-corners{border-color:#d8e9b9aa}
+@media(max-width:759px){.body-lesson .body-pose-video{min-height:300px}}

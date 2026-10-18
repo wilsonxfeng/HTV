@@ -17,14 +17,14 @@
 .voice-heading .icon-tile{flex-shrink:0}.voice-live{background:var(--forest);color:white}
 .voice-lesson-cue{font-size:18px;line-height:1.65;margin:20px 0;color:var(--ink)}
 .voice-consent{font-size:12px;line-height:1.6;color:var(--muted);margin:13px 0 0}
-.voice-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.voice-controls .btn{padding:12px 8px;min-height:48px;font-size:14px}
+.voice-controls{display:grid;grid-template-columns:minmax(0,1fr)}.voice-controls .btn{padding:12px 8px;min-height:48px;font-size:14px}
 .voice-caption{max-height:230px;overflow-y:auto}.voice-caption p{font-size:16px;line-height:1.65}
 .voice-reply{margin-top:18px}.voice-reply label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}
 .voice-reply>div{display:flex;gap:8px}.voice-reply input{min-width:0;width:100%;min-height:48px;border:1px solid var(--line);border-radius:12px;background:#fffdf6;padding:10px 12px;font-size:16px}
 .voice-reply button{display:grid;place-items:center;flex-shrink:0;width:48px;border-radius:12px;background:var(--forest);color:white}
 .voice-feedback{font-size:14px;line-height:1.5;margin-top:12px;color:var(--forest)}
 .ex-coach-attachment{padding:16px;border:1px solid var(--line);border-radius:16px;background:white}.ex-coach-attachment label{display:block;margin-bottom:10px}.ex-coach-attachment input{width:100%;min-width:0;font-size:14px}
-@media(min-width:760px){.ex-layout{grid-template-columns:minmax(300px,1fr) minmax(0,1.35fr)}.ex-camera-panel{position:sticky;top:20px}}
+@media(min-width:760px){.ex-layout{grid-template-columns:minmax(280px,.85fr) minmax(0,2.15fr)}.ex-camera-panel{position:sticky;top:20px}}
 @media(max-width:759px){.ex-camera-ready .ex-camera-panel{position:static}.ex-camera-ready .ex-video-wrap{max-height:none;min-height:270px}.ex-sidebar .voice-coach{padding:20px}.ex-page{padding-bottom:28px}.ex-steps{gap:10px}.voice-lesson-cue{font-size:17px}.ex-step{font-size:11px}}
 
 /* Keep coach and camera aligned as lesson content changes. */
@@ -76,3 +76,9 @@
 .voice-connected-content{display:contents}
 
 .ex-heading .ex-exercise-title{font-size:clamp(27px,4vw,40px);line-height:1.15;margin:24px 0;font-weight:650}
+
+@media(min-width:760px){.ex-sidebar .voice-heading{flex-wrap:wrap}.ex-sidebar .voice-status{margin-left:0}.ex-sidebar .voice-coach{padding:20px}.ex-sidebar .voice-heading h2{font-size:22px}}
+
+/* Improve readability of the instruction beneath the camera. */
+.ex-camera-bottom{font-size:17px;line-height:1.6;padding:16px 18px}
+.ex-camera-bottom .ex-tracking{color:var(--ink)}

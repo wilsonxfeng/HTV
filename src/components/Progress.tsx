@@ -7,7 +7,6 @@ import { HISTORY_UPDATED_EVENT } from '../features/clinical-data/outbox';
 import { clinicalRepository, useClinicalAccess } from '../features/clinical-data/access';
 import type { PatientOverview, SessionRecord } from '../features/clinical-data/contracts';
 import { fetchEchoSessions, toEchoSession } from '../features/clinical-data/echoAdapter';
-import { exerciseRegistry } from '../features/body-exercises/exerciseRegistry';
 import type { EchoSession } from '../features/movement-echoes/types';
 import './progress.css';
 const MovementEchoes = lazy(() => import('../features/movement-echoes/MovementEchoes'));
@@ -18,8 +17,6 @@ export default function Progress() {
   const { sessions: localSessions } = useApp();
   const { access } = useClinicalAccess();
   const [source, setSource] = useState<'device' | 'synced'>(access ? 'synced' : 'device');
-  const [exerciseId, setExerciseId] = useState('finger-spread-close');
-  const [side, setSide] = useState<'Right' | 'Left'>('Right');
   const [patients, setPatients] = useState<PatientOverview[]>([]);
   const [patientId, setPatientId] = useState(access?.patientId ?? '');
   const [records, setRecords] = useState<SessionRecord[]>([]);
@@ -58,9 +55,9 @@ export default function Progress() {
   useEffect(() => {
     loadController.current?.abort(); setViewer(null); setSelected([]); setBusy(false); setError('');
     return () => loadController.current?.abort();
-  }, [source, patientId, access, exerciseId, side]);
+  }, [source, patientId, access]);
 
-  const history = records.filter(s => s.exerciseId === exerciseId && s.hand === side);
+  const history = records;
 
   async function openRecordings(ids: string[]) {
     loadController.current?.abort(); const controller = new AbortController(); loadController.current = controller;
@@ -76,10 +73,8 @@ export default function Progress() {
   return <div className="progress-page content-page page-enter">
     {!viewer && <div className="page-heading"><h1>Progress</h1><img className="progress-flower" src="/assets/garden/stage-4.webp" alt=""/></div>}
     {!viewer && <WeekCalendar sessions={localSessions}/>}
-    {!viewer && <div className="progress-history-controls">
+    {!viewer && access && <div className="progress-history-controls">
       <div className="progress-filters">
-        <label>Exercise<select value={exerciseId} onChange={e => setExerciseId(e.target.value)}>{exerciseRegistry.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
-        <label>Side<select value={side} onChange={e => setSide(e.target.value as 'Left' | 'Right')}><option>Right</option><option>Left</option></select></label>
         {access && <label>History<select value={source} onChange={e => setSource(e.target.value as 'device' | 'synced')}><option value="synced">Synced recordings</option><option value="device">On this device</option></select></label>}
         {synced && patients.length > 1 && <label>Person<select value={patientId} onChange={e => setPatientId(e.target.value)}>{patients.map(p => <option key={p.id} value={p.id}>{p.displayName}</option>)}</select></label>}
         {synced && <button className="icon-button" aria-label="Refresh history" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={20}/></button>}
@@ -97,7 +92,7 @@ export default function Progress() {
           <input type="checkbox" aria-label={`Compare ${dateLabel(record.startedAt)}`} checked={selected.includes(record.id)} disabled={record.status !== 'complete' || (!selected.includes(record.id) && selected.length >= 4)} onChange={() => setSelected(ids => ids.includes(record.id) ? ids.filter(id => id !== record.id) : [...ids, record.id])}/>
           <button className="progress-recording-name" disabled={record.status !== 'complete' || busy} onClick={() => void openRecordings([record.id])}><strong>{dateLabel(record.startedAt)}</strong><span>{record.status === 'complete' ? 'Ready to review' : 'Upload pending'}{record.demonstration ? ' · Demo' : ''}</span></button>
           <ArrowRight size={20}/>
-        </div>) : !loading && <p>No synced recordings for this exercise and side.</p>}
+        </div>) : !loading && <p>No synced recordings yet.</p>}
       </section> : <><button className="sample-card" onClick={() => setViewer({ kind: 'device' })}><Layers size={26}/><div><h2>Movement Echoes</h2></div><ArrowRight size={21}/></button><History compact/></>}
     </>}
   </div>;
