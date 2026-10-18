@@ -10,7 +10,6 @@ import { HISTORY_UPDATED_EVENT } from '../features/clinical-data/outbox';
 import { clinicalRepository, useClinicalAccess } from '../features/clinical-data/access';
 import type { PatientOverview, ProgressPoint, SessionRecord } from '../features/clinical-data/contracts';
 import { fetchEchoSessions, toEchoSession } from '../features/clinical-data/echoAdapter';
-import AccessPanel from '../features/clinical-data/components/AccessPanel';
 import { exerciseRegistry, getExercise } from '../features/body-exercises/exerciseRegistry';
 import type { EchoSession } from '../features/movement-echoes/types';
 import './progress.css';
@@ -20,7 +19,7 @@ type Viewer = { kind: 'device' | 'synced'; sessions?: EchoSession[]; focus?: Evi
 
 export default function Progress() {
   const { sessions: localSessions, navigate } = useApp();
-  const { access, setAccess } = useClinicalAccess();
+  const { access } = useClinicalAccess();
   const [source, setSource] = useState<'device' | 'synced'>(access ? 'synced' : 'device');
   const [exerciseId, setExerciseId] = useState('finger-spread-close');
   const [side, setSide] = useState<'Right' | 'Left'>('Right');
@@ -113,7 +112,6 @@ export default function Progress() {
         {synced && patients.length > 1 && <label>Person<select value={patientId} onChange={e => setPatientId(e.target.value)}>{patients.map(p => <option key={p.id} value={p.id}>{p.displayName}</option>)}</select></label>}
         {synced && <button className="icon-button" aria-label="Refresh history" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={20}/></button>}
       </div>
-      <details className="progress-connection"><summary>{access ? 'History connection' : 'Connect synced history'}</summary>{access ? <button className="text-button" onClick={() => setAccess(null)}>Disconnect</button> : <AccessPanel role="patient" demoRole="clinician"/>}</details>
     </div>}
     {error && <p role="alert" className="progress-error">{error}</p>}
     {(loading || busy) && <p role="status">{busy ? 'Opening recordings…' : 'Loading history…'}</p>}

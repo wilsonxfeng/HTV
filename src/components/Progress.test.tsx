@@ -25,7 +25,7 @@ it('puts search and exercise filters in Progress with no clinician dashboard lin
   expect(screen.getByRole('heading', { name: 'Ask ReMotion' })).toBeTruthy();
   expect(screen.getByLabelText('Exercise').textContent).toContain('Seated Knee Extension');
   expect(screen.getByLabelText('Ask about recorded movements').hasAttribute('disabled')).toBe(true);
-  expect(screen.getByText('Connect synced history')).toBeTruthy();
+  expect(screen.queryByText('Connect synced history')).toBeNull();
   expect(screen.queryByText('Clinician dashboard')).toBeNull();
 });
 it('allows assigned patient access to search synced history ', async () => {
