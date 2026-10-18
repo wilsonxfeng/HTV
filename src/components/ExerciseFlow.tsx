@@ -11,7 +11,6 @@ import { useClinicalCapture } from '../features/clinical-data/useClinicalCapture
 import './exercise.css';
 
 const VoiceCoach = lazy(()=>import('./VoiceCoach'));
-const PatientSyncPanel = lazy(()=>import('../features/clinical-data/components/PatientSyncPanel'));
 
 type Step = 'neutral' | 'target' | 'ready' | 'countdown' | 'recording' | 'done';
 type Capture = { kind: 'neutral' | 'target'; start: number; stableStart: number; lastObservedAt: number; points: Vec3[][]; anchor: Vec3[]; wrist: Vec3 | null; label: string | null };
@@ -258,7 +257,7 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
     : step === 'target' ? exercise.targetCue
     : step === 'ready' ? `Your ${calibration?.source === 'exemplar' ? 'video example' : calibration?.source === 'clinician' ? 'prescribed' : 'personal'} reference is ready. ${exercise.practiceCue} Each repetition takes ${cycleDuration} seconds. You can ask for 6, 8, or 10 seconds.`
     : step === 'countdown' ? 'Practice begins in three seconds. Stop whenever you need to.'
-    : `Repetition ${Math.min(exercise.repetitions, phase.repetition)} of ${exercise.repetitions}. ${exercise.phaseCue(phase.name) + '.'}`);
+    : `${exercise.phaseCue(phase.name)}.`);
 
   return <div className={`ex-page ex-step-${step} ex-camera-${status}`}>
     <div className="ex-heading"><div><button className="ex-back" onClick={() => { if (step === 'recording') finishRef.current(Math.min(totalDuration, (performance.now() - recordStart.current) / 1000)); stop(); onBack(); }}><ArrowLeft size={15}/> Home</button><h1 className="ex-exercise-label"><label htmlFor="exercise-choice">Exercise</label></h1><select id="exercise-choice" className="ex-exercise-choice" value={exerciseId} disabled={coachConnected || active || Boolean(capture) || referenceVideoBusy} onChange={event => { setExerciseId(event.target.value); resetCalibration(); setCycleDuration(exercises.find(item => item.id === event.target.value)?.defaultCycleDuration ?? 8); }} >{exercises.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div></div>
@@ -267,7 +266,6 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
       <aside className="ex-sidebar"><Suspense fallback={<p>Loading coach…</p>}><VoiceCoach cue={cue} context={`Exercise: ${exercise.name}. Step: ${step}. Physical hand: ${confirmed ? hand : 'not confirmed'}. Camera: ${status}. Reference: ${calibration?.source ?? 'not captured'}. Repetitions: ${exercise.repetitions}. Cycle: ${cycleDuration} seconds. ${hint}`} onReply={replyToCoach} onConnection={handleConnection}/></Suspense>
         {capture && <div className="ex-capture-progress" role="progressbar" aria-label="Stable calibration capture" aria-valuenow={Math.round(captureProgress * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${captureProgress * 100}%` }}/></div>}
         {showReferencePicker && step === 'target' && coachConnected && <div className="ex-coach-attachment"><label htmlFor="reference-video">Choose your reference video</label><input ref={referenceInput} id="reference-video" type="file" accept="video/*" disabled={referenceVideoBusy || Boolean(capture)} onChange={event => { void importReferenceVideo(event.target.files?.[0]); event.currentTarget.value = ''; }}/>{referenceVideoBusy && <p role="status">Reading video… {Math.round(referenceVideoProgress * 100)}%</p>}</div>}
-        <Suspense fallback={null}><PatientSyncPanel consent={clinicalCapture.consent} onConsent={clinicalCapture.setConsent} disabled={active || Boolean(capture) || referenceVideoBusy} notice={clinicalCapture.notice} version={clinicalCapture.version}/></Suspense>
       </aside>
       <section className="ex-camera-panel" aria-label="Camera and live tracking">
         <div className="ex-camera-top"><span><Camera size={15}/> {step === 'done' ? 'Capture complete' : 'Camera'}</span><span className={step === 'recording' ? 'ex-rec' : 'ex-feed-note'}>{step === 'recording' ? <><i/> REC · {elapsed.toFixed(1)}s</> : 'MIRRORED'}</span></div>

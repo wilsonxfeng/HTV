@@ -45,7 +45,7 @@ function CoachControls({ context, cue, commands = 'left hand, right hand, ready,
   useEffect(() => {
     if (!connected || lastCue.current === cue) return;
     lastCue.current = cue;
-    sendUserMessage(`[App lesson cue, not a patient message] You are ReMotion's voice lesson coach. Deliver this instruction briefly and warmly, then wait for the user's reply. Do not announce actions yourself: ${cue}`);
+    sendUserMessage(`[App lesson cue, not a patient message] You are ReMotion's voice lesson coach. Deliver this instruction briefly and warmly, then wait for the user's reply. Do not announce repetition numbers or count repetitions aloud. Do not announce actions yourself: ${cue}`);
   }, [connected, cue, sendUserMessage]);
   const start = () => {
     setLocalError(''); onFeedback('');

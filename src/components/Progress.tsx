@@ -7,19 +7,16 @@ import { HISTORY_UPDATED_EVENT } from '../features/clinical-data/outbox';
 import { clinicalRepository, useClinicalAccess } from '../features/clinical-data/access';
 import type { PatientOverview, SessionRecord } from '../features/clinical-data/contracts';
 import { fetchEchoSessions, toEchoSession } from '../features/clinical-data/echoAdapter';
-import AccessPanel from '../features/clinical-data/components/AccessPanel';
 import { exerciseRegistry } from '../features/body-exercises/exerciseRegistry';
-import { loadHandDemo } from '../features/movement-echoes/handDemo';
-import { loadKneeDemo } from '../features/body-exercises/bodyDemo';
 import type { EchoSession } from '../features/movement-echoes/types';
 import './progress.css';
 const MovementEchoes = lazy(() => import('../features/movement-echoes/MovementEchoes'));
 const dateLabel = (value: string) => new Date(value).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-type Viewer = { kind: 'device' | 'synced' | 'demo'; sessions?: EchoSession[] };
+type Viewer = { kind: 'device' | 'synced'; sessions?: EchoSession[] };
 
 export default function Progress() {
   const { sessions: localSessions } = useApp();
-  const { access, setAccess } = useClinicalAccess();
+  const { access } = useClinicalAccess();
   const [source, setSource] = useState<'device' | 'synced'>(access ? 'synced' : 'device');
   const [exerciseId, setExerciseId] = useState('finger-spread-close');
   const [side, setSide] = useState<'Right' | 'Left'>('Right');
@@ -76,15 +73,6 @@ export default function Progress() {
     } catch (cause) { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Could not open recordings.'); }
     finally { if (!controller.signal.aborted) setBusy(false); }
   }
-  async function openDemo(kind: 'hand' | 'knee') {
-    loadController.current?.abort(); const controller = new AbortController(); loadController.current = controller;
-    setBusy(true); setError('');
-    try {
-      const loaded = await (kind === 'knee' ? loadKneeDemo : loadHandDemo)(() => {}, controller.signal);
-      if (!controller.signal.aborted) setViewer({ kind: 'demo', sessions: loaded });
-    } catch (cause) { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Demo unavailable.'); }
-    finally { if (!controller.signal.aborted) setBusy(false); }
-  }
   return <div className="progress-page content-page page-enter">
     {!viewer && <div className="page-heading"><h1>Progress</h1><img className="progress-flower" src="/assets/garden/stage-4.webp" alt=""/></div>}
     {!viewer && <WeekCalendar sessions={localSessions}/>}
@@ -96,13 +84,12 @@ export default function Progress() {
         {synced && patients.length > 1 && <label>Person<select value={patientId} onChange={e => setPatientId(e.target.value)}>{patients.map(p => <option key={p.id} value={p.id}>{p.displayName}</option>)}</select></label>}
         {synced && <button className="icon-button" aria-label="Refresh history" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={20}/></button>}
       </div>
-      <details className="progress-connection"><summary>{access ? 'History connection' : 'Connect synced history'}</summary>{access ? <button className="text-button" onClick={() => setAccess(null)}>Disconnect</button> : <AccessPanel role="patient" demoRole="clinician"/>}</details>
     </div>}
     {error && <p role="alert" className="progress-error">{error}</p>}
     {(loading || busy) && <p role="status">{busy ? 'Opening recordings…' : 'Loading history…'}</p>}
     {viewer ? <Suspense fallback={<p role="status">Opening Movement Echoes…</p>}><MovementEchoes
       key={viewer.kind} sessions={viewer.sessions} initialFocusedSessionId={viewer.sessions?.[0]?.id} searchPatientId={viewer.kind === 'synced' ? patientId : undefined}
-      providedOnly={viewer.kind !== 'device'} cacheLocally={viewer.kind === 'demo'} backLabel="Back to Progress"
+      providedOnly={viewer.kind !== 'device'} backLabel="Back to Progress"
       onDeleted={async id => { if (localSessions.find(s => s.id === id)?.trackingMode === 'pose') await useApp.getState().remove(id); }}
       onClose={() => setViewer(null)}/></Suspense> : <>
       {synced ? <section className="progress-recordings panel"><div className="section-heading"><h2>Recordings</h2><button className="btn btn-primary" disabled={selected.length < 2 || busy} onClick={() => void openRecordings(selected)}>Compare selected</button></div>
@@ -112,7 +99,6 @@ export default function Progress() {
           <ArrowRight size={20}/>
         </div>) : !loading && <p>No synced recordings for this exercise and side.</p>}
       </section> : <><button className="sample-card" onClick={() => setViewer({ kind: 'device' })}><Layers size={26}/><div><h2>Movement Echoes</h2></div><ArrowRight size={21}/></button><History compact/></>}
-      <section className="progress-demos panel"><div className="section-heading"><h2>Demo videos</h2><span className="badge">DEMO</span></div><div><button className="btn btn-secondary" disabled={busy} onClick={() => void openDemo('hand')}>Finger spread overlays<ArrowRight size={18}/></button><button className="btn btn-secondary" disabled={busy} onClick={() => void openDemo('knee')}>Knee extension overlays<ArrowRight size={18}/></button></div></section>
     </>}
   </div>;
 }

@@ -21,7 +21,7 @@ it('keeps recording navigation in Progress and moves search out of this page', (
   const view = render(<Progress/>);
   expect(screen.queryByRole('heading', { name: 'Ask ReMotion' })).toBeNull();
   expect(screen.getByLabelText('Exercise').textContent).toContain('Seated Knee Extension');
-  expect(screen.getByText('Connect synced history')).toBeTruthy(); expect(screen.queryByText('Clinician dashboard')).toBeNull();
+  expect(screen.queryByText('Connect synced history')).toBeNull(); expect(screen.queryByText('Clinician dashboard')).toBeNull();
   expect(view.container.textContent).not.toMatch(/°|%|Chart values|hold angle/);
 });
 it('passes assigned search access into the synced Echoes viewer', async () => {
@@ -35,23 +35,27 @@ it('passes assigned search access into the synced Echoes viewer', async () => {
   expect(mocks.viewer.mock.lastCall?.[0]).toMatchObject({ searchPatientId: 'assigned', providedOnly: true });
   expect(screen.queryByRole('heading', { name: 'Progress' })).toBeNull();
 });
-it('loads only the selected local demo and does not pass synced patient access into it', async () => {
-  useClinicalAccess.setState({ access: { token: 'test', patientId: 'assigned', role: 'patient', demonstration: true } });
-  render(<Progress/>); fireEvent.click(screen.getByText('Finger spread overlays'));
-  await screen.findByText('finger-demo'); expect(mocks.kneeDemo).not.toHaveBeenCalled(); expect(mocks.viewer.mock.lastCall?.[0].searchPatientId).toBeUndefined();
-  fireEvent.click(screen.getByText('Back to Progress')); fireEvent.click(screen.getByText('Knee extension overlays'));
-  await screen.findByText('knee-demo'); expect(mocks.handDemo).toHaveBeenCalledOnce();
+it('keeps demo video links out of Progress', () => {
+  render(<Progress/>);
+  expect(screen.queryByText('Finger spread overlays')).toBeNull();
+  expect(screen.queryByText('Knee extension overlays')).toBeNull();
 });
 it('refreshes synced history when an upload finishes', async () => {
   useClinicalAccess.setState({ access: { token: 'test', patientId: 'assigned', role: 'patient', demonstration: true } }); render(<Progress/>);
   await waitFor(() => expect(mocks.sessions).toHaveBeenCalledOnce());
   window.dispatchEvent(new Event('remotion-history-updated')); await waitFor(() => expect(mocks.sessions).toHaveBeenCalledTimes(2));
 });
-it('discards a pending viewer load when the account changes', async () => {
+it('discards a pending synced recording load when the account changes', async () => {
   useClinicalAccess.setState({ access: { token: 'test', patientId: 'assigned', role: 'patient', demonstration: true } });
-  let resolve!: (value: { id: string }[]) => void; mocks.handDemo.mockImplementation(() => new Promise(r => { resolve = r; }));
-  render(<Progress/>); fireEvent.click(screen.getByText('Finger spread overlays'));
+  const motion = createDemoSession();
+  const record = { id: motion.id, patientId: 'assigned', exerciseId: 'finger-spread-close', hand: 'Right', startedAt: motion.createdAt, status: 'complete', demonstration: true, repetitions: [], motion, video: { durationMs: 10000, mirrored: false, width: 640, height: 480, landmarkOffsetMs: 0, sha256: 'hash' } };
+  let resolve!: (value: typeof record) => void;
+  mocks.sessions.mockResolvedValue([record]);
+  mocks.detail.mockImplementationOnce(() => new Promise(r => { resolve = r; }));
+  mocks.video.mockResolvedValue(new Blob(['video']));
+  render(<Progress/>);
+  fireEvent.click(await screen.findByRole('button', { name: /Ready to review/ }));
   await act(async () => useClinicalAccess.setState({ access: null }));
-  await act(async () => resolve([{ id: 'stale-demo' }]));
-  expect(screen.queryByText('stale-demo')).toBeNull(); expect(screen.queryByRole('region', { name: 'Movement Echoes' })).toBeNull();
+  await act(async () => resolve(record));
+  expect(screen.queryByRole('region', { name: 'Movement Echoes' })).toBeNull();
 });
