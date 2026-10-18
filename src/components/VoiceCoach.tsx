@@ -4,6 +4,7 @@ import { Headphones, Mic, MicOff, PhoneOff, Send } from 'lucide-react';
 import { VOICE_AGENT_ID } from '../lib/voice';
 
 type Props = {
+  demoMode?: boolean;
   context: string;
   cue: string;
   commands?: string;
@@ -19,7 +20,7 @@ export default function VoiceCoach(props: Props) {
   }}><CoachControls {...props} feedback={feedback} onFeedback={setFeedback}/></ConversationProvider>;
 }
 
-function CoachControls({ context, cue, commands = 'left hand, right hand, ready, begin, stop, retry camera, reference video, recalibrate, see my movement, and 6/8/10 seconds', onReply, onConnection, feedback, onFeedback }: Props & { feedback: string; onFeedback: (text: string) => void }) {
+function CoachControls({ demoMode = false, context, cue, commands = 'left hand, right hand, ready, begin, stop, retry camera, reference video, recalibrate, see my movement, and 6/8/10 seconds', onReply, onConnection, feedback, onFeedback }: Props & { feedback: string; onFeedback: (text: string) => void }) {
   const { startSession, endSession, sendContextualUpdate, sendUserMessage } = useConversationControls();
   const { status, message } = useConversationStatus();
   const { isMuted, setMuted } = useConversationInput();
@@ -35,22 +36,22 @@ function CoachControls({ context, cue, commands = 'left hand, right hand, ready,
     if (!connected) lastCue.current = '';
   }, [connected]);
   useEffect(() => {
-    if (connected) sendContextualUpdate(`ReMotion app state: ${context}. The app validates captures and controls timing. You cannot see camera frames. Never claim a capture succeeded until the app reports it. Never diagnose or prescribe. User replies understood by the app: ${commands}. Ask for those clear replies. Do not invent exercises or repetitions.`);
-  }, [connected, context, commands, sendContextualUpdate]);
+    if (connected && !demoMode) sendContextualUpdate(`ReMotion app state: ${context}. The app validates captures and controls timing. You cannot see camera frames. Never claim a capture succeeded until the app reports it. Never diagnose or prescribe. User replies understood by the app: ${commands}. Ask for those clear replies. Do not invent exercises or repetitions.`);
+  }, [connected, context, commands, demoMode, sendContextualUpdate]);
   useEffect(() => {
-    if (connected && feedback) sendContextualUpdate(`App result for the user's reply: ${feedback}. Treat this as authoritative; do not claim a blocked action succeeded.`);
-  }, [connected, feedback, sendContextualUpdate]);
+    if (connected && feedback && !demoMode) sendContextualUpdate(`App result for the user's reply: ${feedback}. Treat this as authoritative; do not claim a blocked action succeeded.`);
+  }, [connected, feedback, demoMode, sendContextualUpdate]);
   useEffect(() => {
-    if (!connected || lastCue.current === cue) return;
+    if (!connected || !cue || (demoMode && cue === "Whenever you're ready, say begin") || lastCue.current === cue) return;
     lastCue.current = cue;
     sendUserMessage(`[App lesson cue, not a patient message] You are ReMotion's voice lesson coach. Deliver this instruction briefly and warmly, then wait for the user's reply. Do not announce repetition numbers or count repetitions aloud. Do not announce actions yourself: ${cue}`);
-  }, [connected, cue, sendUserMessage]);
+  }, [connected, cue, demoMode, sendUserMessage]);
   const start = () => {
     setLocalError(''); onFeedback('');
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       setLocalError('Your coach needs microphone access on localhost or HTTPS.'); return;
     }
-    startSession({ agentId: VOICE_AGENT_ID, connectionType: 'webrtc' });
+    startSession({ agentId: VOICE_AGENT_ID, connectionType: 'webrtc', ...(demoMode ? { overrides: { agent: { firstMessage: "Whenever you're ready, say begin", prompt: { prompt: "You are a minimal finger-exercise demo voice. Your first message must be exactly: Whenever you're ready, say begin. After that, stay silent unless an app lesson cue explicitly asks you to speak; speak only the exact instruction after the final colon. When the user says begin, do not add any acknowledgment or instruction. Never ask for hand selection, calibration, ready, or a reference. Never count repetitions or invent movement observations. Do not ask follow-up questions. If the user asks to stop, briefly acknowledge stopping." } } } } : {}) });
   };
   return <section className={`voice-coach ${connected ? '' : 'voice-coach-redesign is-idle'}`} aria-label="Voice lesson coach">
     {connected ? <>

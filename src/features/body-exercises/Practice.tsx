@@ -9,7 +9,7 @@ import './components/body-exercises.css';
 export default function Practice({onBack,onComplete,onRecorded}:{onRecorded?:(s:MotionSession)=>void;onBack:()=>void;onComplete:(s:MotionSession)=>void}) {
   const [selected,setSelected]=useState('finger-spread-close'),[started,setStarted]=useState(false);
   const exercise=getExercise(selected);
-  if(started)return exercise.trackingMode==='hand'?<ExerciseFlow onRecorded={onRecorded} onBack={()=>setStarted(false)} onComplete={onComplete}/>:<BodyExerciseRecorder exerciseId={selected} onBack={()=>setStarted(false)} onComplete={s=>{onRecorded?.(s);onComplete(s)}}/>;
+  if(started)return exercise.trackingMode==='hand'?<ExerciseFlow demoMode onRecorded={onRecorded} onBack={()=>setStarted(false)} onComplete={onComplete}/>:<BodyExerciseRecorder exerciseId={selected} onBack={()=>setStarted(false)} onComplete={s=>{onRecorded?.(s);onComplete(s)}}/>;
   const icons = { hand: Hand, leg: KneeExtensionIcon, arm: BicepCurlIcon, core: RotateCcw };
   return <div className="body-practice body-chooser page-enter">
     <button className="text-button" onClick={onBack}><ArrowLeft size={20}/>Home</button>

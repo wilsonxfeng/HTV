@@ -117,3 +117,23 @@ describe('coach-driven practice', () => {
     expect(mock.stop).toHaveBeenCalled();
   });
 });
+
+it('demo mode starts from begin without spoken hand selection or calibration', async () => {
+  const props = { demoMode: true, onBack: vi.fn(), onComplete: vi.fn(), onRecorded: vi.fn() };
+  const view = render(<ExerciseFlow {...props}/>);
+  await act(async () => { await import('./VoiceCoach'); });
+  expect(screen.getByText("Whenever you're ready, say begin")).toBeTruthy();
+  fireEvent.click(screen.getByText('Connect coach'));
+  fireEvent.click(screen.getByText('Reply begin'));
+  expect(screen.queryByText('Stop practice')).toBeNull();
+  observe(createDemoSession().calibration.neutral);
+  view.rerender(<ExerciseFlow {...props}/>);
+  act(() => vi.advanceTimersByTime(3100));
+  expect(screen.getByText('Stop practice')).toBeTruthy();
+  act(() => vi.advanceTimersByTime(6500));
+  expect(screen.getByText('Great, keep doing more reps.')).toBeTruthy();
+  fireEvent.click(screen.getByText('Disconnect coach'));
+  expect(props.onRecorded).toHaveBeenCalledOnce();
+  expect(props.onRecorded.mock.calls[0][0].calibration.source).toBe('demo');
+  expect(props.onRecorded.mock.calls[0][0].source).toBe('camera');
+});

@@ -7,6 +7,7 @@ import { useHandTracker } from '../lib/useHandTracker';
 import { extractReferenceFromVideo } from '../lib/referenceVideo';
 import type { Calibration, HandFrame, HandSide, MotionSession, Vec3 } from '../lib/types';
 
+import { makeDemoHand } from '../lib/demo';
 import { useClinicalCapture } from '../features/clinical-data/useClinicalCapture';
 import './exercise.css';
 
@@ -19,13 +20,14 @@ function Guide({ hand }: { hand: HandSide }) {
   return <svg className="ex-placement-guide" style={{ transform: hand === 'Left' ? 'scaleX(-1)' : undefined }} viewBox="0 0 400 430" aria-hidden="true"><path d="M135 376 C124 345 104 317 90 295 L52 233 C41 211 57 193 74 205 L118 247 L110 112 C108 88 134 85 138 108 L151 214 L153 65 C152 40 178 40 181 64 L186 206 L198 53 C200 28 225 32 224 57 L223 211 L240 87 C243 64 266 68 263 91 L256 224 L277 150 C283 130 305 136 299 156 L282 270 C278 314 254 346 250 376" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="7 8"/><path d="M132 379H253" stroke="currentColor" strokeWidth="2" strokeDasharray="7 8"/></svg>;
 }
 
-export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRecorded?: (session: MotionSession) => void; onComplete: (session: MotionSession) => void; onBack: () => void }) {
+export default function ExerciseFlow({ onComplete, onBack, onRecorded, demoMode = false }: { demoMode?: boolean; onRecorded?: (session: MotionSession) => void; onComplete: (session: MotionSession) => void; onBack: () => void }) {
   const tracker = useHandTracker();
   const clinicalCapture = useClinicalCapture();
   const clinicalCaptureRef = useRef(clinicalCapture); clinicalCaptureRef.current = clinicalCapture;
   const recordingId = useRef(crypto.randomUUID());
   const recordedAt = useRef(new Date().toISOString());
   const { sample, latestRef, status, stop, lockIdentity } = tracker;
+  const [demoPending, setDemoPending] = useState(false);
   const [step, setStep] = useState<Step>('neutral');
   const [hand, setHand] = useState<HandSide>('Right');
   const [confirmed, setConfirmed] = useState(false);
@@ -57,6 +59,12 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
   const phase = exercise.phaseAt(Math.min(elapsed, totalDuration - .001), cycleDuration);
   const active = step === 'countdown' || step === 'recording';
   const detecting = Boolean(sample?.tracking && status === 'ready');
+
+  useEffect(() => {
+    if (!demoMode || !demoPending || !coachConnected || !detecting || active) return;
+    setCalibration({ neutral: makeDemoHand(0, hand), target: makeDemoHand(1, hand), source: 'demo', hand, createdAt: new Date().toISOString() });
+    setConfirmed(true); setDemoPending(false); setHint(''); setCountdown(3); setStep('countdown');
+  }, [demoMode, demoPending, coachConnected, detecting, active, hand]);
 
   const resetCalibration = () => {
     setStep('neutral'); setNeutral([]); setCalibration(null); setCapture(null); captureRef.current = null;
@@ -191,6 +199,7 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
   const stepNumber = step === 'done' ? 4 : active || step === 'ready' ? 3 : neutral.length ? 2 : 1;
 
   const stopLesson = () => {
+    setDemoPending(false);
     referenceAbort.current?.abort();
     captureRef.current = null; setCapture(null); setCaptureProgress(0);
     if (step === 'recording') finishRecording(Math.min(totalDuration, (performance.now() - recordStart.current) / 1000));
@@ -212,6 +221,10 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
     if (command.type === 'review') {
       if (session && validCount >= 8) { onComplete(session); return 'Opening your movement.'; }
       return 'We need a recording with enough tracked frames before opening your movement.';
+    }
+    if (demoMode) {
+      if (command.type === 'ready') { if (!active) setDemoPending(true); return ''; }
+      return '';
     }
     if (captureRef.current || referenceVideoBusy) return 'We are measuring your reference. Hold comfortably still, or say stop.';
     if (active) return 'Practice is underway. Follow the rhythm, or say stop at any time.';
@@ -246,7 +259,7 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
     return 'Say see my movement to review, or retry camera to record again.';
   };
 
-  const cue = hint || (step === 'done'
+  const cue = demoMode ? (step === 'recording' && elapsed >= 6 ? (elapsed < 14 ? 'Great, keep doing more reps.' : 'Keep going at your own pace.') : step === 'neutral' ? "Whenever you're ready, say begin" : '') : hint || (step === 'done'
     ? `${partial ? 'Your practice stopped early.' : 'Your practice is complete.'} Say “see my movement” to explore the captured portion, or “retry camera” to record again.`
     : !confirmed ? 'Which physical hand are you exercising? Say “left hand” or “right hand”.'
     : status === 'error' ? 'Your camera needs reconnecting. Say “retry camera”, or use the retry button.'
@@ -262,7 +275,7 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
     <div className="ex-heading"><div><button className="ex-back" onClick={() => { if (step === 'recording') finishRef.current(Math.min(totalDuration, (performance.now() - recordStart.current) / 1000)); stop(); onBack(); }}><ArrowLeft size={20}/> Exercises</button><h1 className="ex-exercise-title">{exercise.name}</h1></div></div>
     <div className="ex-steps" aria-label="Exercise progress">{['Coach', 'Target', 'Practice', 'Replay'].map((label, i) => <div className={stepNumber === i + 1 ? 'ex-step ex-current' : stepNumber > i + 1 ? 'ex-step ex-complete' : 'ex-step'} key={label}><span>{stepNumber > i + 1 ? <Check size={14}/> : `0${i + 1}`}</span>{label}</div>)}</div>
     <div className="ex-layout">
-      <aside className="ex-sidebar"><Suspense fallback={<p>Loading coach…</p>}><VoiceCoach cue={cue} context={`Exercise: ${exercise.name}. Step: ${step}. Physical hand: ${confirmed ? hand : 'not confirmed'}. Camera: ${status}. Reference: ${calibration?.source ?? 'not captured'}. Repetitions: ${exercise.repetitions}. Cycle: ${cycleDuration} seconds. ${hint}`} onReply={replyToCoach} onConnection={handleConnection}/></Suspense>
+      <aside className="ex-sidebar"><Suspense fallback={<p>Loading coach…</p>}><VoiceCoach demoMode={demoMode} cue={cue} context={`Exercise: ${exercise.name}. Step: ${step}. Physical hand: ${confirmed ? hand : 'not confirmed'}. Camera: ${status}. Reference: ${calibration?.source ?? 'not captured'}. Repetitions: ${exercise.repetitions}. Cycle: ${cycleDuration} seconds. ${hint}`} onReply={replyToCoach} onConnection={handleConnection}/></Suspense>
         {capture && <div className="ex-capture-progress" role="progressbar" aria-label="Stable calibration capture" aria-valuenow={Math.round(captureProgress * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${captureProgress * 100}%` }}/></div>}
         {showReferencePicker && step === 'target' && coachConnected && <div className="ex-coach-attachment"><label htmlFor="reference-video">Choose your reference video</label><input ref={referenceInput} id="reference-video" type="file" accept="video/*" disabled={referenceVideoBusy || Boolean(capture)} onChange={event => { void importReferenceVideo(event.target.files?.[0]); event.currentTarget.value = ''; }}/>{referenceVideoBusy && <p role="status">Reading video… {Math.round(referenceVideoProgress * 100)}%</p>}</div>}
       </aside>
