@@ -54,13 +54,23 @@ function CoachControls({ context, cue, commands = 'left hand, right hand, ready,
     }
     startSession({ agentId: VOICE_AGENT_ID, connectionType: 'webrtc' });
   };
-  return <section className="voice-coach" aria-label="Voice lesson coach">
-    <div className="voice-heading"><span className={`icon-tile ${connected ? 'voice-live' : ''}`}><Headphones size={24}/></span><div><h2>Voice coach</h2>{(connected||connecting)&&<p role="status">{connecting ? 'Connecting…' : isSpeaking ? 'Speaking' : isMuted ? 'Microphone muted' : 'Listening'}</p>}</div></div>
-    {connected&&<div className="voice-lesson-cue" aria-live="polite">{cue}</div>}
+  return <section className={`voice-coach ${connected ? '' : 'voice-coach-redesign is-idle'}`} aria-label="Voice lesson coach">
+    {connected ? <>
+      <div className="voice-heading"><span className="icon-tile voice-live"><Headphones size={24}/></span><div><h2>Voice coach</h2><p role="status">{isSpeaking ? 'Speaking' : isMuted ? 'Microphone muted' : 'Listening'}</p></div></div>
+      <div className="voice-lesson-cue" aria-live="polite">{cue}</div>
+    </> : <>
+      <div className="voice-heading"><span className="voice-heading-icon"><Headphones size={22}/></span><div><h2>Voice coach</h2><p>Your movement companion</p></div><span className="voice-status" role="status"><i/>{connecting ? 'Connecting…' : 'Ready'}</span></div>
+      <div className="voice-center">
+        <div className="voice-orbit" aria-hidden="true"><div className="voice-orbit-core"><span/><span/><span/><span/><span/></div></div>
+        <div className="voice-welcome"><h3>A little guidance,<br/>every step of the way.</h3><p>{connecting ? 'Connecting to your voice coach…' : 'Listen to your coach and move at your own pace.'}</p></div>
+      </div>
+    </>}
+    <div className={connected ? "voice-connected-content" : "voice-action-area"}>
     {!connected && !connecting && <><button className="btn btn-primary full" onClick={start}><Mic size={19}/>Start lesson</button><p className="voice-consent">Uses camera and mic. Audio and lesson progress go to ElevenLabs.</p></>}
     {(connected || connecting) && <div className="voice-controls"><button className="btn btn-secondary" onClick={() => { connectionHandler.current(false); void endSession(); }}><PhoneOff size={17}/>{connecting ? 'Cancel' : 'End lesson'}</button>{connected && <button className="btn btn-secondary" onClick={() => setMuted(!isMuted)} aria-pressed={isMuted}>{isMuted ? <MicOff size={17}/> : <Mic size={17}/>} {isMuted ? 'Unmute' : 'Mute'}</button>}</div>}
     {(status === 'error' || localError) && <p className="voice-error" role="alert">{localError || (/permission|denied|NotAllowed/i.test(message ?? '') ? 'Allow microphone access in your browser, then start the lesson again.' : 'Your coach could not connect. Start the lesson again to retry.')}</p>}
     {connected && <><details className="voice-transcript"><summary>Transcript</summary><div className="voice-caption" role="log" aria-label="Latest words from your coach"><p>{caption || 'Connecting…'}</p></div></details><form className="voice-reply" onSubmit={event => { event.preventDefault(); if (!reply.trim()) return; const text = reply.trim(); onFeedback(onReply(text)); sendUserMessage(text); setReply(''); }}><label htmlFor="coach-reply">Type a reply</label><div><input id="coach-reply" value={reply} onChange={event => setReply(event.target.value)} placeholder="e.g. Right hand" autoComplete="off"/><button type="submit" aria-label="Send reply" disabled={!reply.trim()}><Send size={18}/></button></div></form></>}
     {feedback && <p className="voice-feedback" role="status">{feedback}</p>}
+    </div>
   </section>;
 }

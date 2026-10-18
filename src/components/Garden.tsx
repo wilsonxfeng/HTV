@@ -21,10 +21,10 @@ export function GardenScene({sessions, compact=false, example=false, celebrate=f
  </div>;
 }
 export default function Garden() {
- const {sessions,navigate,gardenReward,clearGardenReward}=useApp(); const [example,setExample]=useState(false);const progress=gardenProgress(sessions);
- return <div className="garden-page content-page page-enter"><div className="page-heading"><div><h1>Garden</h1></div><Flower2 className="heading-flower" size={36}/></div>
+ const {sessions,navigate,gardenReward,clearGardenReward}=useApp(); const progress=gardenProgress(sessions);
+ return <div className="garden-page content-page page-enter"><div className="page-heading"><div><h1>Garden</h1></div></div>
  {gardenReward&&<section className="garden-celebration" role="status"><button className="icon-button" aria-label="Dismiss garden celebration" onClick={clearGardenReward}><X/></button><h2>A flower grew</h2></section>}
- <div className="garden-layout"><section className="garden-main"><div className="garden-mode">{example&&<span className="badge">EXAMPLE</span>}<button className="text-button" onClick={()=>setExample(!example)}>{example?'My garden':'Preview garden'}</button></div><GardenScene sessions={sessions} example={example} celebrate={!!gardenReward&&!example}/></section>
+ <div className="garden-layout"><section className="garden-main"><GardenScene sessions={sessions} celebrate={!!gardenReward}/></section>
  <div className="garden-side"><section className="plant-progress panel"><div className="section-heading"><h2>Next flower</h2><Sprout size={25}/></div><p>One completed session grows a flower.</p><button className="btn btn-primary full" onClick={()=>navigate('exercise')}>Practice<ArrowRight size={19}/></button></section>
  <div className="garden-stats"><div><Flower2/><strong>{progress.blooms}</strong><span>flowers grown</span></div><div><Check/><strong>{progress.completed.length}</strong><span>sessions completed</span></div></div><WeekCalendar sessions={sessions}/></div></div>
  </div>;

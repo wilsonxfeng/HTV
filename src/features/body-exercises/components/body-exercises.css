@@ -1,1 +1,35 @@
 .body-practice{max-width:1120px;margin:0 auto;padding:20px 24px 64px;color:#284336}.body-practice h1{font-size:clamp(27px,4vw,40px);line-height:1.15;margin:24px 0}.body-practice .voice-coach{margin:20px 0}.body-recorder-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(260px,1fr);gap:22px}.body-camera{border:1px solid #d8dfd0;border-radius:24px;overflow:hidden;background:white}.body-camera-heading{display:flex;align-items:center;gap:10px;padding:17px 20px}.body-camera-heading span{margin-left:auto;font-size:14px}.body-video-stage{position:relative;aspect-ratio:4/3;background:#e7eddf;overflow:hidden}.body-video-stage video{width:100%;height:100%;object-fit:contain;transform:none}.body-framing{position:absolute;inset:0;pointer-events:none;display:flex;align-items:flex-end;justify-content:center;padding:22px}.body-frame-corners{position:absolute;inset:7%;border:3px dashed #aa8966;border-radius:24px}.body-framing.ready .body-frame-corners{border-color:#719d80}.body-framing span{background:#fffaf0ed;padding:10px 14px;border-radius:12px;font-size:15px;text-align:center;z-index:1;max-width:100%}.body-enable-camera{position:absolute;top:42%;left:50%;transform:translateX(-50%);white-space:nowrap}.body-record-controls{display:flex;gap:12px;padding:18px;flex-wrap:wrap}.body-record-controls .btn{flex:1;min-height:54px}.body-settings{display:flex;gap:12px}.body-settings label{flex:1;min-width:0;display:grid;gap:8px}.body-practice select{border:1px solid #cad4c4;background:#fffdf5;border-radius:12px;padding:13px;color:#284336;width:100%;font:inherit;min-height:50px}.body-guide{margin-top:22px;background:#f0f2e7;border-radius:18px;padding:18px}.body-guide summary{font-weight:700;cursor:pointer}.body-guide svg{width:100%;max-height:160px}.body-guide p{font-size:16px;line-height:1.5}.body-guide a{color:#315b47}.body-limit{font-size:15px;line-height:1.5;color:#627360}.body-chooser{max-width:660px}.body-chooser>label{display:block;margin:24px 0 9px}.body-chooser>p{line-height:1.6;font-size:18px;margin:24px 0}.body-chooser>.btn{width:100%}.body-review-metrics{display:flex;flex-wrap:wrap;gap:16px;padding:16px 24px;background:#eaf0e1;border-radius:18px;margin:16px 0}.body-review-metrics span{display:grid;gap:4px;font-size:14px}.body-review-metrics strong{font-size:22px}.body-review-metrics p{margin:0;flex-basis:100%;font-size:14px}@media(max-width:760px){.body-recorder-layout{grid-template-columns:minmax(0,1fr)}.body-practice{padding:16px 16px 48px}.body-camera-heading{padding:14px;font-size:15px}.body-camera-heading span{font-size:12px}.body-setup{display:flex;flex-direction:column}.body-settings{order:0}.body-guide{order:1}.body-limit{order:2}.body-setup .clinical-upload-panel{order:3}.body-frame-corners{inset:5%}.body-framing{padding:12px}}
+
+/* Match the exercise chooser to the main Home and Garden page container. */
+.body-practice.body-chooser{max-width:1180px;padding:18px 22px 24px}
+.body-practice.body-chooser h1{font-size:34px;line-height:1.17;margin:24px 0 32px}
+.body-chooser>label{margin-top:0}
+.body-chooser>select{min-height:60px;padding:14px 18px}
+.body-chooser>.btn{min-height:60px}
+@media(min-width:700px){.body-practice.body-chooser{padding:25px 35px}.body-practice.body-chooser h1{font-size:42px;margin-top:28px;margin-bottom:40px}.body-chooser>p{margin:28px 0}}
+@media(max-width:359px){.body-practice.body-chooser{padding-inline:16px}}
+
+/* Exercise cards use the same soft surfaces as Home and Garden. */
+.body-chooser .practice-intro h1{margin-bottom:12px}
+.practice-intro>p{font-size:18px;line-height:1.6}
+.exercise-options{border:0;padding:0;margin:32px 0;min-width:0}
+.exercise-options legend{font-size:18px;font-weight:650;margin-bottom:16px}
+.exercise-option-grid{display:grid;gap:16px}
+.exercise-option{position:relative;display:flex;align-items:flex-start;gap:18px;padding:26px;border:1px solid var(--line);border-radius:24px;background:#fffdf7;cursor:pointer;min-width:0;transition:background .18s,border-color .18s}
+.exercise-option:hover{background:#f0f3e8}
+.exercise-option.is-selected{background:var(--sage);border-color:var(--forest);box-shadow:inset 0 0 0 1px var(--forest)}
+.exercise-option:focus-within{outline:3px solid #986322;outline-offset:4px}
+.exercise-option input{position:absolute;width:1px;height:1px;opacity:0}
+.exercise-option-icon{display:grid;place-items:center;width:56px;height:56px;flex-shrink:0;background:#fffaf0;border-radius:17px;color:var(--forest)}
+.exercise-option-copy{display:flex;flex-direction:column;gap:12px;min-width:0;flex:1}
+.exercise-option-copy strong{font-size:22px;line-height:1.3;letter-spacing:-.4px}
+.exercise-option-copy>span:last-child{font-size:16px;line-height:1.6;color:var(--muted)}
+.exercise-experimental{align-self:flex-start;border-radius:8px;background:var(--butter);padding:3px 8px;font-size:12px;font-weight:650}
+.exercise-option-indicator{width:24px;height:24px;flex-shrink:0;border:1.5px solid #9aa992;border-radius:50%;background:#fffdf7;margin-top:3px}
+.is-selected .exercise-option-indicator{border:7px solid var(--forest)}
+.practice-selection-footer{display:flex;flex-direction:column;gap:24px;padding:28px;border-radius:24px;background:var(--butter);border:1px solid #ead99c}
+.practice-selection-footer h2{font-size:21px;margin-bottom:12px}
+.practice-selection-footer p{font-size:17px;line-height:1.65}
+.practice-selection-footer .btn{min-height:60px;flex-shrink:0}
+@media(min-width:800px){.exercise-option-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.exercise-option{min-height:180px}.practice-selection-footer{flex-direction:row;align-items:center;justify-content:space-between;gap:40px}.practice-selection-footer .btn{min-width:210px}.practice-selection-footer>div{max-width:720px}}
+@media(max-width:499px){.exercise-option{padding:20px;gap:12px}.exercise-option-icon{width:44px;height:44px}.exercise-option-copy strong{font-size:19px}.exercise-option-copy>span:last-child{font-size:15px}.practice-selection-footer{padding:22px}}

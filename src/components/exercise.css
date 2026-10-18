@@ -29,3 +29,51 @@
 .ex-coach-attachment{padding:16px;border:1px solid var(--line);border-radius:16px;background:white}.ex-coach-attachment label{display:block;margin-bottom:10px}.ex-coach-attachment input{width:100%;min-width:0;font-size:14px}
 @media(min-width:760px){.ex-layout{grid-template-columns:minmax(300px,1fr) minmax(0,1.35fr)}.ex-camera-panel{position:sticky;top:20px}}
 @media(max-width:759px){.ex-camera-ready .ex-camera-panel{position:static}.ex-camera-ready .ex-video-wrap{max-height:none;min-height:270px}.ex-sidebar .voice-coach{padding:20px}.ex-page{padding-bottom:28px}.ex-steps{gap:10px}.voice-lesson-cue{font-size:17px}.ex-step{font-size:11px}}
+
+/* Keep coach and camera aligned as lesson content changes. */
+@media(min-width:760px){
+ .ex-layout{align-items:stretch}
+ .ex-sidebar{align-self:stretch}
+ .ex-sidebar>.voice-coach{flex:1;display:flex;flex-direction:column;min-width:0}
+ .ex-sidebar .voice-reply{margin-top:auto;padding-top:24px}
+ .ex-camera-panel{position:static;display:flex;flex-direction:column;align-self:stretch}
+ .ex-camera-panel>.ex-video-wrap{flex:1;min-height:390px}
+ .ex-camera-top,.ex-camera-bottom,.ex-recording-controls{flex-shrink:0}
+}
+
+/* A calm, structured voice companion rather than an empty stretched panel. */
+.voice-coach.voice-coach-redesign{display:flex;flex-direction:column;background:#f2f5eb;padding:24px}
+.voice-coach-redesign .voice-heading{align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid #dce4d2}
+.voice-heading-icon{width:40px;height:40px;border-radius:13px;background:#fffdf7;display:grid;place-items:center;flex-shrink:0;color:var(--forest)}
+.voice-coach-redesign .voice-heading h2{font-size:21px;margin:0;letter-spacing:-.5px}
+.voice-coach-redesign .voice-heading p{font-size:12px;margin:4px 0 0}
+.voice-status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--forest);white-space:nowrap;padding:6px 9px;background:#e2ebd8;border-radius:20px}
+.voice-status i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.voice-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 0;gap:24px}
+.voice-orbit{width:144px;height:144px;flex-shrink:0;border:1px solid #dbe5ce;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#dfe9d2 0%,#eaf0df 58%,#f2f5eb 72%)}
+.voice-orbit-core{width:92px;height:92px;border-radius:50%;background:var(--forest);display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 6px 20px #254d3c12}
+.voice-orbit-core span{width:4px;border-radius:4px;background:#edf3e2;height:18px}
+.voice-orbit-core span:nth-child(2),.voice-orbit-core span:nth-child(4){height:31px}
+.voice-orbit-core span:nth-child(3){height:43px}
+.is-speaking .voice-orbit-core span{animation:voice-wave 1s ease-in-out infinite alternate}
+.is-speaking .voice-orbit-core span:nth-child(even){animation-delay:-.6s}
+@keyframes voice-wave{from{transform:scaleY(.55)}to{transform:scaleY(1)}}
+.voice-welcome{text-align:center;max-width:290px}
+.voice-welcome h3{font-size:24px;line-height:1.35;letter-spacing:-.6px;font-weight:650}
+.voice-welcome p{font-size:15px;line-height:1.65;margin-top:12px}
+.voice-action-area{margin-top:auto}
+.voice-coach-redesign .voice-consent{text-align:center;font-size:11px;line-height:1.65;margin-top:14px}
+.voice-instruction{width:100%;padding:20px;border-radius:18px;background:#fffdf7;border:1px solid #dfe6d5}
+.voice-instruction-label{font-size:10px;letter-spacing:1.4px;font-weight:650;color:var(--muted)}
+.voice-coach-redesign .voice-lesson-cue{font-size:18px;line-height:1.65;margin:10px 0 0}
+.voice-coach-redesign.is-connected .voice-orbit{width:104px;height:104px}
+.voice-coach-redesign.is-connected .voice-orbit-core{width:70px;height:70px}
+.voice-coach-redesign .voice-controls{gap:10px}
+.voice-coach-redesign .voice-transcript{border-top:1px solid #dce4d2;margin-top:18px;padding-top:6px}
+.voice-coach-redesign .voice-transcript summary{font-size:14px;font-weight:500}
+.ex-sidebar .voice-coach-redesign .voice-reply{margin-top:12px;padding-top:0}
+@media(max-width:759px){.voice-coach-redesign .voice-center{padding:24px 0}.voice-welcome h3{font-size:22px}.voice-coach-redesign .voice-status{font-size:10px;padding:5px 7px}.voice-coach-redesign .voice-heading{gap:9px}}
+@media(prefers-reduced-motion:reduce){.is-speaking .voice-orbit-core span{animation:none}}
+
+/* Preserve the existing connected lesson layout. */
+.voice-connected-content{display:contents}
