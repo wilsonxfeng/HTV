@@ -1,1 +1,13 @@
-.ask-remotion{margin:24px 0;padding:26px;border:1px solid #d9dfd1;border-radius:24px;background:#fffaf0;color:#254d3c}.ask-remotion h2{margin:8px 0;font-size:28px}.ask-remotion-kicker{font-size:12px;letter-spacing:.12em}.ask-remotion form label{display:block;margin-bottom:8px}.ask-remotion-input{display:flex;gap:10px}.ask-remotion input{flex:1;min-width:0;background:white;border:1px solid #72816d;border-radius:12px;padding:14px;font:inherit}.ask-remotion button{background:#254d3c;color:white;border:1px solid #254d3c;border-radius:12px;padding:12px 16px;font:inherit;cursor:pointer}.ask-remotion button:disabled{opacity:.55;cursor:default}.ask-remotion-suggestions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.ask-remotion-suggestions button{background:#e5ecd9;color:#254d3c;border-color:#cad4be}.ask-remotion button:focus-visible,.ask-remotion input:focus-visible{outline:3px solid #a7719a;outline-offset:3px}.ask-remotion-evidence{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}.ask-remotion-evidence article{flex:1;min-width:220px;padding:18px;background:#fff;border:1px solid #d9dfd1;border-radius:16px}.ask-remotion small{display:block;line-height:1.6}.ask-remotion [role=alert]{color:#8d3329}@media(max-width:550px){.ask-remotion{padding:18px}.ask-remotion-input{flex-direction:column}}
+.ask-remotion{margin:24px 0;padding:24px;border:1px solid #d9dfd1;border-radius:24px;background:#fffaf0;color:#254d3c;min-width:0}
+.ask-remotion h2{margin:0 0 18px;font-size:24px}
+.ask-remotion-input{display:flex}
+.ask-remotion input{width:100%;min-width:0;background:white;border:1px solid #adb8a6;border-radius:14px;padding:14px 16px;font:inherit;color:#254d3c}
+.ask-remotion input:focus-visible{outline:3px solid #a7719a;outline-offset:3px}
+.ask-remotion-messages{display:flex;flex-direction:column;gap:12px;min-height:120px;max-height:360px;overflow-y:auto;overscroll-behavior:contain;margin-bottom:16px;padding:2px 2px 8px;scrollbar-width:thin}
+.ask-remotion-message{max-width:94%;min-width:0;border-radius:16px 16px 16px 4px;padding:12px 14px;background:#365747;color:#fff;align-self:flex-start;overflow-wrap:anywhere}
+.ask-remotion-message-user{align-self:flex-end;background:#254d3c;border-radius:16px 16px 4px 16px}
+.ask-remotion-message>span{font-size:11px;font-weight:600;letter-spacing:.04em;color:#fff}
+.ask-remotion .ask-remotion-message p{white-space:pre-wrap;margin:5px 0 0;line-height:1.6;font-size:14px;color:#fff}
+.ask-remotion-messages>[role=status]{font-size:14px;color:#254d3c}
+.ask-remotion [role=alert]{color:#8d3329;margin-top:12px}
+@media(max-width:550px){.ask-remotion{padding:18px}}

@@ -951,3 +951,15 @@
 /* Keep the answer beside the recording it focuses. */
 .echo-layout{grid-template-areas:"main ask" "main controls";grid-template-rows:auto 1fr}.echo-main{grid-area:main}.echo-layout>.ask-remotion{grid-area:ask;margin:0;padding:20px}.echo-layout>.echo-sidebar{grid-area:controls;display:block}.echo-layout>.ask-remotion .ask-remotion-input{flex-direction:column}.echo-layout>.ask-remotion .ask-remotion-suggestions button{text-align:left}
 @media(max-width:1000px){.echo-layout{grid-template-areas:"ask" "main" "controls";grid-template-rows:auto}.echo-layout>.ask-remotion .ask-remotion-input{flex-direction:row}.echo-layout>.ask-remotion{padding:18px}}
+/* Fold secondary controls away during the demo. */
+.echo-view-top{justify-content:flex-end}
+.echo-disclosure>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;list-style:none;cursor:pointer;min-height:44px}
+.echo-disclosure>summary::-webkit-details-marker{display:none}
+.echo-disclosure>summary h2{margin:0;font-size:20px}
+.echo-disclosure>summary svg{transition:transform .18s}
+.echo-disclosure[open]>summary{margin-bottom:16px}
+.echo-disclosure[open]>summary svg{transform:rotate(180deg)}
+.echo-session-section.echo-disclosure{border-top:1px solid var(--echo-line);padding-top:12px}
+.echo-control-card.echo-disclosure{padding:16px 22px}
+.echo-advanced>.echo-details{margin-inline:12px}
+@media(prefers-reduced-motion:reduce){.echo-disclosure>summary svg{transition:none}}

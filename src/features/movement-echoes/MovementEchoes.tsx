@@ -3,7 +3,7 @@ import { fetchEchoSessions, toEchoSession } from '../clinical-data/echoAdapter';
 import { clinicalRepository } from '../clinical-data/access';
 import type { Evidence, EvidenceFocus } from '../ask-remotion/contracts';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Layers, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronDown, Layers, RefreshCw, Trash2 } from 'lucide-react';
 import EchoViewer from './EchoViewer';
 import SideBySide from './SideBySide';
 import { MarkerEditor, RecordingTools } from './RecordingTools';
@@ -351,12 +351,6 @@ export default function MovementEchoes({
     setEvidenceFocus({ ...evidence[0], token: ++focusToken.current });
     setSideBySide(false);
   }
-  const validCounts = (id: string) => {
-    const c = caches[id];
-    return c
-      ? `${c.frames.filter((f) => f.quality.valid).length}/${c.frames.length}`
-      : 'Preparing';
-  };
   return (
     <div className="echoes">
       <header className="echo-header">
@@ -376,7 +370,6 @@ export default function MovementEchoes({
             <Layers size={30} />
           </span>
         </div>
-        {!providedOnly&&<p className="echo-local">Local preview · Videos stay in this browser.</p>}
       </header>
       {error && (
         <p className="echo-error" role="alert">
@@ -405,30 +398,21 @@ export default function MovementEchoes({
         </div>
       )}
       {!ready ? (
-        <p role="status">Loading local recordings…</p>
+        <p role="status">Loading recordings…</p>
       ) : !sessions.length ? (
         <section className="echo-empty">
           <span className="echo-empty-icon">
             <Layers size={40} />
           </span>
-          <h2>Bring your movement into view.</h2>
-          <p>
-            Superimpose real hand cutouts from the four supplied recordings. One
-            video stays in full color; the others become aligned, translucent
-            echoes.
-          </p>
+          <h2>Load recordings</h2>
           <button
             className="echo-button echo-primary"
             disabled={importing}
             onClick={() => void importDemo()}
           >
-            Prepare four demo clips
+            Load demo recordings
             <ArrowRight size={20} />
           </button>
-          <p className="echo-note">
-            Demonstration footage · Not a patient’s recovery history.
-            Preparation runs once on this device.
-          </p>
         </section>
       ) : null}
       {focus && (
@@ -436,11 +420,6 @@ export default function MovementEchoes({
           <div className="echo-layout">
             <div className="echo-main">
               <div className="echo-view-top">
-                <span className="echo-eyebrow">
-                  {ghosts.length
-                    ? `${ghosts.length} PAST ${ghosts.length === 1 ? 'RECORDING' : 'RECORDINGS'} OVERLAID`
-                    : 'ONE RECORDING, IN FOCUS'}
-                </span>
                 <button
                   className="echo-button echo-primary"
                   disabled={!comparison.length}
@@ -458,7 +437,7 @@ export default function MovementEchoes({
                 >
                   {sideBySide
                     ? 'Return to overlays'
-                    : 'Compare original videos side by side'}
+                    : 'Side by side'}
                 </button>
               </div>
               {sideBySide ? (
@@ -484,7 +463,7 @@ export default function MovementEchoes({
               )}
               <div className="echo-repeat-row">
                 <label>
-                  Compare
+                  Repetition
                   <select
                     aria-label="Focused repetition"
                     value={repChoices[focus.id] ?? 0}
@@ -505,11 +484,8 @@ export default function MovementEchoes({
                   </select>
                 </label>
               </div>
-              <section className="echo-session-section">
-                <div className="echo-section-heading">
-                  <h2>Choose a recording</h2>
-                  <span>Tap an outline or a date</span>
-                </div>
+              <details className="echo-session-section echo-disclosure">
+                <summary><h2>Choose a recording</h2><ChevronDown size={20} /></summary>
                 <div
                   className="echo-session-chips"
                   role="group"
@@ -531,25 +507,15 @@ export default function MovementEchoes({
                       />
                       <span>
                         {s.name.replace(/\.(mov|mp4|webm)$/i, '')}
-                        <small>
-                          {s.repetitions[repChoices[s.id] ?? 0]?.static
-                            ? 'Static pose'
-                            : s.demonstration
-                              ? 'Demo clip'
-                              : `Imported ${new Date(s.createdAt).toLocaleDateString()}`}
-                        </small>
                       </span>
                     </button>
                   ))}
                 </div>
-              </section>
+              </details>
             </div>
             <aside className="echo-sidebar">
-              <section className="echo-control-card">
-                <div className="echo-section-heading">
-                  <h2>Your echoes</h2>
-                  <Layers size={23} />
-                </div>
+              <details className="echo-control-card echo-disclosure">
+                <summary><h2>Your echoes</h2><ChevronDown size={20} /></summary>
                 <label className="echo-check">
                   <input
                     type="checkbox"
@@ -621,8 +587,8 @@ export default function MovementEchoes({
                                 : failures[s.id]
                                   ? 'Outline unavailable'
                                   : s.repetitions[repChoices[s.id] ?? 0]?.static
-                                    ? 'Static real pose · No detected cycle'
-                                    : `${validCounts(s.id)} reliable outline samples`}
+                                    ? 'Static pose'
+                                    : ''}
                             </small>
                           </span>
                           <span className="echo-sr-only">Layer {i + 1}</span>
@@ -630,10 +596,11 @@ export default function MovementEchoes({
                       );
                     })}
                 </div>
-              </section>
+              </details>
             </aside>
             <AskRemotionPanel patientId={searchPatientId} exerciseId={focus.exerciseId} side={focus.selectedHand} recordings={sessions} focusId={focus.id} onOpen={openEvidence}/>
           </div>
+          <details className="echo-advanced echo-details"><summary>More options</summary>
           <details
             className="echo-details"
             onToggle={(e) => setInspecting(e.currentTarget.open)}
@@ -733,6 +700,7 @@ export default function MovementEchoes({
               </button>
             )}
           </div>}
+          </details>
         </>
       )}
       {!providedOnly&&<details

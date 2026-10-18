@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, act, fireEvent } from '@testing-library/react';
+import { cleanup, render, screen, act, fireEvent, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import MovementEchoes from './MovementEchoes';
-import { GREATEST_FINGER_QUESTION, GREATEST_FINGER_REPLY } from '../ask-remotion/localSearch';
+import { GREATEST_FINGER_QUESTION } from '../ask-remotion/localSearch';
 import type { EchoSession } from './types';
-const mock=vi.hoisted(()=>({viewer:vi.fn(),list:vi.fn().mockResolvedValue([]),cache:vi.fn(),saveCache:vi.fn()}));
+const mock=vi.hoisted(()=>({viewer:vi.fn(),list:vi.fn().mockResolvedValue([]),cache:vi.fn(),saveCache:vi.fn(),request:vi.fn()}));
+vi.mock('../clinical-data/access',()=>({clinicalRepository:{request:mock.request}}));
 vi.mock('./repository',()=>({echoRepository:mock}));
 vi.mock('./EchoViewer',()=>({default:(props:unknown)=>{mock.viewer(props);return null;}}));
 vi.mock('./SideBySide',()=>({default:()=>null}));
@@ -26,6 +27,7 @@ describe('authorized remote comparison scope',()=>{
     const props={providedOnly:true,sessions:[first,second]};
     const view=render(<MovementEchoes {...props}/>);
     await act(async()=>{});
+    fireEvent.click(screen.getByText('Your echoes'));
     const overlay=screen.getByRole('checkbox',{name:'Show past sessions'}) as HTMLInputElement;
     fireEvent.click(overlay);expect(overlay.checked).toBe(true);
     await act(async()=>{view.rerender(<MovementEchoes {...props} sessions={[first,second,third]} evidenceFocus={{sessionId:third.id,repetitionIndex:null,timestampMs:null,token:1}}/>);});
@@ -36,23 +38,29 @@ describe('authorized remote comparison scope',()=>{
 
 });
 
-it('runs the local scripted question inside Echoes and focuses the greatest valid recording at its real peak', async()=>{
+it('submits chat with Enter and focuses the returned recording without expanding secondary panels', async()=>{
  const a=clip('ordinary'),b=clip('winner');
  for(const [recording,value] of [[a,12],[b,28]] as const){
   recording.frames=Array.from({length:181},(_,i)=>({tMs:i*100,valid:true,spread:value,image:[],world:[]}));
   recording.repetitions=[{startMs:1000,peakMs:4000,endMs:7000,valid:true,coverage:1,peakSpread:value}];
  }
+ mock.request.mockResolvedValue({message:'Found the greatest opening.',evidence:[{sessionId:b.id,repetitionIndex:0,timestampMs:4000,playable:true}]});
  const view=render(<MovementEchoes providedOnly sessions={[a,b]} initialFocusedSessionId={a.id}/>);
  await act(async()=>{});
- fireEvent.click(screen.getByText(GREATEST_FINGER_QUESTION));
- await screen.findByText(GREATEST_FINGER_REPLY);
+ fireEvent.change(screen.getByLabelText('Ask about recorded movements'),{target:{value:GREATEST_FINGER_QUESTION}});
+ fireEvent.keyDown(screen.getByLabelText('Ask about recorded movements'),{key:'Enter'});
+ await screen.findByText('Found the greatest opening.');
+ await waitFor(() => expect(mock.viewer.mock.lastCall?.[0].focusId).toBe(b.id));
  const props=mock.viewer.mock.lastCall?.[0];
  expect(props).toMatchObject({focusId:b.id,evidenceFocus:{sessionId:b.id,timestampMs:4000,repetitionIndex:0}});
  expect(document.querySelector('.echo-session-chips button.selected')?.textContent).toContain('winner');
- expect(view.container.textContent).not.toMatch(/°|%|Recorded movement|tracked samples|reliable outline samples/);
+ expect(view.container.querySelector('.ask-remotion')?.textContent).not.toMatch(/°|%|Recorded movement|tracked samples|reliable outline samples/);
+ expect(view.container.querySelector('.echo-session-section')?.hasAttribute('open')).toBe(false);
+ expect(view.container.querySelector('.echo-control-card')?.hasAttribute('open')).toBe(false);
  // A second ask after manually selecting another clip focuses and pauses the result again.
  fireEvent.click([...document.querySelectorAll('.echo-session-chips button')].find(button=>button.textContent?.includes('ordinary'))!);
- fireEvent.click(screen.getByText(GREATEST_FINGER_QUESTION));
+ fireEvent.change(screen.getByLabelText('Ask about recorded movements'),{target:{value:GREATEST_FINGER_QUESTION}});
+ fireEvent.keyDown(screen.getByLabelText('Ask about recorded movements'),{key:'Enter'});
  await act(async()=>{});
  expect(mock.viewer.mock.lastCall?.[0].evidenceFocus.token).toBeGreaterThan(props.evidenceFocus.token);
  expect(mock.viewer.mock.lastCall?.[0].focusId).toBe(b.id);

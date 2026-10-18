@@ -1,3 +1,5 @@
+import { chatRequestSchema, GeminiRecordingChat } from './features/ask-remotion/chat';
+import type { RecordingSummary } from '../src/features/ask-remotion/chat';
 import { GeminiIntentParser, intentSchema, requestSchema, presetIntent, type IntentParser } from './features/ask-remotion/intentParser';
 import { executeSearch } from './features/ask-remotion/queryExecutor';
 import Fastify from 'fastify';
@@ -93,6 +95,31 @@ export async function buildApi(config: Config, repository: ClinicalRepository, r
     if (!input.preset && !searchParser) throw new HttpError(503, 'Question interpretation is unavailable. Try a suggested search.');
     const intent = input.preset ? presetIntent(input.preset, input.exerciseContext.side) : intentSchema.parse(await searchParser!.parse(input.question, input.exerciseContext));
     return executeSearch(repository.db, input.patientId, intent, input.preset ? 'preset' : 'gemini');
+  });
+  const recordingChat = config.geminiKey ? new GeminiRecordingChat(config.geminiKey, config.geminiModel) : undefined;
+  app.post('/api/ask-remotion/chat', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async request => {
+    const input = chatRequestSchema.parse(request.body);
+    let recordings: RecordingSummary[];
+    if (input.patientId) {
+      const user = await principal(request.headers.authorization);
+      authorize(user, input.patientId);
+      // Synced histories always use authorized persisted facts, never browser-supplied measurements.
+      recordings = (await repository.sessions(input.patientId)).filter(s => s.status === 'complete').slice(0, 100).map(s => ({
+        id: s.id, name: new Date(s.startedAt).toISOString(), recordedAt: new Date(s.startedAt).toISOString(),
+        exerciseId: s.exerciseId, side: s.hand, durationMs: s.video.durationMs, playable: s.video.sizeBytes > 0,
+        trackingQuality: s.metrics?.trackingQuality ?? 0, range: s.metrics?.body?.movementRange ?? null,
+        demonstration: s.demonstration,
+        configuration: JSON.stringify([s.exerciseId, s.hand, s.video.mirrored, s.trackingMode, s.cameraView, s.analysisVersion, s.demonstration, s.videoKind]),
+        repetitions: s.repetitions.map((r, index) => ({ index, peakMs: r.peakMs, peak: r.peakSpread,
+          reliable: r.valid && !r.static && r.coverage >= .8 && Number.isFinite(r.peakSpread) && r.peakMs >= 0 && r.peakMs <= s.video.durationMs })),
+      }));
+    } else {
+      // Browser-only recordings can use this gateway solely in the explicit local preview.
+      if (!config.demo && !config.localDemoPatientId) throw new HttpError(401, 'Connect your recording history to use chat.');
+      recordings = input.recordings;
+    }
+    if (!recordingChat) throw new HttpError(503, 'Set GEMINI_API_KEY on the ReMotion server to enable chat.');
+    return recordingChat.reply(input.question, input.history, recordings, input.focusId);
   });
   const reportLocks = new Map<string, Promise<unknown>>();
   app.post<{ Params: { id: string } }>('/api/sessions/:id/report', { config: { rateLimit: { max: 8, timeWindow: '1 minute' } } }, async request => {

@@ -375,7 +375,6 @@ export default function EchoViewer({
         <span className="echo-focus-label">
           <i />
           {focus.name.replace('.mov', '')}
-          <small>Original video</small>
         </span>
         <button
           className="echo-frame-toggle"
@@ -481,10 +480,7 @@ export default function EchoViewer({
         <ScanLine size={20} />
         Pause at peak {focus.trackingMode === 'pose' ? 'movement' : 'spread'}
       </button>
-      <p className="echo-alignment" role="status">
-        {status || 'Aligned at the palm. Recorded finger positions stay unchanged.'}
-        {reduced && ' Showing fewer overlays to keep playback responsive.'}
-      </p>
+      {(status || reduced) && <p className="echo-alignment" role="status">{status || 'Fewer overlays shown for smoother playback.'}</p>}
     </section>
   );
 }
