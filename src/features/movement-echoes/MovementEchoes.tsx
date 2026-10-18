@@ -366,9 +366,6 @@ export default function MovementEchoes({
               Movement Echoes<span>.</span>
             </h1>
           </div>
-          <span className="echo-title-icon">
-            <Layers size={30} />
-          </span>
         </div>
       </header>
       {error && (
@@ -428,8 +425,6 @@ export default function MovementEchoes({
                   <Layers size={20} />
                   Overlay Sessions
                 </button>
-              </div>
-              <div className="echo-mode-row">
                 <button
                   className="echo-text-button"
                   disabled={!comparison.length}

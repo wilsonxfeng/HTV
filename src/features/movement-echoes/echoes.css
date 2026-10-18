@@ -963,3 +963,6 @@
 .echo-control-card.echo-disclosure{padding:16px 22px}
 .echo-advanced>.echo-details{margin-inline:12px}
 @media(prefers-reduced-motion:reduce){.echo-disclosure>summary svg{transition:none}}
+
+/* Keep comparison modes together above the viewer. */
+.echo-view-top{flex-wrap:wrap;column-gap:20px;row-gap:8px}
