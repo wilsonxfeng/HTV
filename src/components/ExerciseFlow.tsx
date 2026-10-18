@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Camera, Check, CheckCircle2, Loader2, RotateCcw, Square, TriangleAlert } from 'lucide-react';
 import { averageHands, clinicianTarget } from '../lib/geometry';
-import { defaultExercise, exercises } from '../lib/exercises';
+import { defaultExercise } from '../lib/exercises';
 import { parseLessonReply } from '../lib/coachLesson';
 import { useHandTracker } from '../lib/useHandTracker';
 import { extractReferenceFromVideo } from '../lib/referenceVideo';
@@ -35,8 +35,7 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
   const captureRef = useRef<Capture | null>(null);
   const [captureProgress, setCaptureProgress] = useState(0);
   const [hint, setHint] = useState('');
-  const [exerciseId, setExerciseId] = useState(defaultExercise.id);
-  const exercise = exercises.find(item => item.id === exerciseId) ?? defaultExercise;
+  const exercise = defaultExercise;
   const [coachConnected, setCoachConnected] = useState(false);
   const connectedRef = useRef(false);
   const [showReferencePicker, setShowReferencePicker] = useState(false);
@@ -260,7 +259,7 @@ export default function ExerciseFlow({ onComplete, onBack, onRecorded }: { onRec
     : `${exercise.phaseCue(phase.name)}.`);
 
   return <div className={`ex-page ex-step-${step} ex-camera-${status}`}>
-    <div className="ex-heading"><div><button className="ex-back" onClick={() => { if (step === 'recording') finishRef.current(Math.min(totalDuration, (performance.now() - recordStart.current) / 1000)); stop(); onBack(); }}><ArrowLeft size={15}/> Home</button><h1 className="ex-exercise-label"><label htmlFor="exercise-choice">Exercise</label></h1><select id="exercise-choice" className="ex-exercise-choice" value={exerciseId} disabled={coachConnected || active || Boolean(capture) || referenceVideoBusy} onChange={event => { setExerciseId(event.target.value); resetCalibration(); setCycleDuration(exercises.find(item => item.id === event.target.value)?.defaultCycleDuration ?? 8); }} >{exercises.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div></div>
+    <div className="ex-heading"><div><button className="ex-back" onClick={() => { if (step === 'recording') finishRef.current(Math.min(totalDuration, (performance.now() - recordStart.current) / 1000)); stop(); onBack(); }}><ArrowLeft size={20}/> Exercises</button><h1 className="ex-exercise-title">{exercise.name}</h1></div></div>
     <div className="ex-steps" aria-label="Exercise progress">{['Coach', 'Target', 'Practice', 'Replay'].map((label, i) => <div className={stepNumber === i + 1 ? 'ex-step ex-current' : stepNumber > i + 1 ? 'ex-step ex-complete' : 'ex-step'} key={label}><span>{stepNumber > i + 1 ? <Check size={14}/> : `0${i + 1}`}</span>{label}</div>)}</div>
     <div className="ex-layout">
       <aside className="ex-sidebar"><Suspense fallback={<p>Loading coach…</p>}><VoiceCoach cue={cue} context={`Exercise: ${exercise.name}. Step: ${step}. Physical hand: ${confirmed ? hand : 'not confirmed'}. Camera: ${status}. Reference: ${calibration?.source ?? 'not captured'}. Repetitions: ${exercise.repetitions}. Cycle: ${cycleDuration} seconds. ${hint}`} onReply={replyToCoach} onConnection={handleConnection}/></Suspense>

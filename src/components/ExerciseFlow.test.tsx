@@ -52,9 +52,9 @@ async function calibrated() {
 }
 
 describe('coach-driven practice', () => {
-  it('has a real exercise selector and no old manual setup panels', async () => {
+  it('shows the exercise heading and no old manual setup panels', async () => {
     await mount();
-    expect(screen.getByRole('combobox', { name: 'Exercise' }).textContent).toBe('Finger Spread & Close');
+    expect(screen.getByRole('heading', { name: 'Finger Spread & Close', level: 1 })).toBeTruthy();
     expect(screen.queryByText('Optional voice coach')).toBeNull();
     expect(screen.queryByText('Which hand are you exercising?')).toBeNull();
     expect(screen.queryByText('How to move your hand')).toBeNull();
